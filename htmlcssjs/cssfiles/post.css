@@ -1,0 +1,42 @@
+/*will apply to all posts indivdually on the page, just sizing and backround
+shit*/
+.post_class{
+    background-color: #525354;
+    height: 140px;
+    width: 60%;
+    margin-left: 1px;
+	margin-top: 2px;
+}
+/*spacing and placement of the profile pic*/
+#poster_page_pic{
+    margin-left: 10px;
+    margin-top: 10px;
+}
+/*each score is div'ed with its arrow, floats the 2 divs left
+may need some display: inline-flex live the  nav bar*/
+.score_h4_and_arrow{
+    padding-left: 5px;
+}
+/*actual score gets spaced from its arrow*/
+.score{
+    padding-bottom: 6px;
+}
+/* basically three items per post. the port pic and arrows, the text part, and the
+post preview. first floatted lefft, second too, and post preview floated right. somehow make the post post_preview_div
+stay inline with the port pic when screen shrunk, maybe java script, idk*/
+#score_field_and_port_pic_div{
+    float: left;
+}
+#poster_info{
+    float: left;
+    margin-top: 5px;
+}
+#post_preview_div{
+    float: right;
+    padding-top: 20px;
+    padding-right: 20px;
+}
+
+#post_title{
+    margin-top: 25px;
+}

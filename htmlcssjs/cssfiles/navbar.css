@@ -1,0 +1,34 @@
+/*coloring and spacing of the background div*/
+#sub_div{
+    background-color: #525354;
+    color: #fcfcfc;
+    width: 100%;
+    height: 19px;
+    margin-top: 1px;
+    margin-left: 1px;
+
+}
+/*inline-flex is the magic doer here, does some trange shit im not aware of fully*/
+/*float left as well and display: block*/
+ul{
+    padding: 0px;
+    margin: 0px;
+    list-style-type: none;
+    display: inline-flex;
+}
+/*float left with inline-flex is the magic shit, great fucking combo*/
+li{
+    /*float: left; i THOUGHT this was doing something...*/
+    padding-left: 5px;
+    padding-right: 5px;
+}
+/*make it red on hover*/
+.highlight_li_navbar:hover{
+    background-color: #d81515;
+}
+/*display block is also the magic shit*/
+li a{
+    /*display: block; i THOUGHT this was doing something....*/
+    color: #fcfcfc;
+    text-decoration: none;
+}

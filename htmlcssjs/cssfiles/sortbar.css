@@ -1,0 +1,16 @@
+/*the li stuff from the nav bar also affects the shit going on in here*/
+/*as in a ton of the styling is done by nav.css, so keep that in mind*/
+#sort_div{
+    background-color: #525354;
+    width: 175px;
+    height: 19px;
+    margin-top: 3px;
+    margin-left: 1px;
+}
+.highlight_li_sortbar:hover{
+	background-color: #d81515;
+}
+/*TODO THIS NEEDS TO BE REMOVED, ITS JUST FOR SHOW RIGHT NOW*/
+#Following{
+    background-color: #d81515;
+}

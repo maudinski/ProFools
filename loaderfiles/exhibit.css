@@ -1,0 +1,168 @@
+/*bakground color of whole page, also remove all default spacings and paddings
+, cause manual labor is better than guess and fucking check labor*/
+/*over all css for whole page/all pages
+put it here cause all pages get the header anyways*/
+html, body{
+    background-color: #2d2e30;
+    margin: 0px;
+    padding: 0px;
+}
+h3, h2, h1, h4, h5, p{
+    margin: 0px;
+}
+
+/*setting the color and height and stuff of the background bar*/
+#header_div{
+    background-color: #525354;
+    color: #fcfcfc;
+    width: 100%;
+    height: 40px;
+}
+/*places the logo correctly*/
+#logo_div{
+    position: absolute;
+    top: 9px;
+    left: 15px;
+    padding-left: 5px;
+    padding-right: 5px;
+    background-color: #d81515;
+}
+/*places the phrase correctly*/
+#phrase_div{
+    position: absolute;
+    top: 11px;
+    left: 110px;
+}
+/*places the seacrh bar and button*/
+#search_div{
+    position: absolute;
+    top: 10px;
+    /*MAYBEthis is set based on the document.getElementById('sign_link_div').offsetWidth + 20*/
+    right: 114px;
+}
+/*places the sign up/in links right
+TODO
+this will also need to be fucked with for if user is sign in, idk how tho*/
+#sign_links_div{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+/****TODO*******give anchors a class so no duplicate code*******/
+/*changes apearance of signup anchor shits*/
+#sign_up_link{
+    color: #fcfcfc;
+    text-decoration: none;
+}
+#sign_up_link:hover{
+    color: #fcfcfc;
+    text-decoration: underline;
+}
+#sign_in_link{
+    color: #fcfcfc;
+    text-decoration: none;
+}
+#sign_in_link:hover{
+    color: #fcfcfc;
+    text-decoration: underline;
+}
+/*coloring and spacing of the background div*/
+#sub_div{
+    background-color: #525354;
+    color: #fcfcfc;
+    width: 100%;
+    height: 19px;
+    margin-top: 1px;
+    margin-left: 1px;
+
+}
+/*inline-flex is the magic doer here, does some trange shit im not aware of fully*/
+/*float left as well and display: block*/
+ul{
+    padding: 0px;
+    margin: 0px;
+    list-style-type: none;
+    display: inline-flex;
+}
+/*float left with inline-flex is the magic shit, great fucking combo*/
+li{
+    /*float: left; i THOUGHT this was doing something...*/
+    padding-left: 5px;
+    padding-right: 5px;
+}
+/*make it red on hover*/
+.highlight_li_navbar:hover{
+    background-color: #d81515;
+}
+/*display block is also the magic shit*/
+li a{
+    /*display: block; i THOUGHT this was doing something....*/
+    color: #fcfcfc;
+    text-decoration: none;
+}
+/*the li stuff from the nav bar also affects the shit going on in here*/
+/*as in a ton of the styling is done by nav.css, so keep that in mind*/
+#sort_div{
+    background-color: #525354;
+    width: 175px;
+    height: 19px;
+    margin-top: 3px;
+    margin-left: 1px;
+}
+.highlight_li_sortbar:hover{
+	background-color: #d81515;
+}
+/*TODO THIS NEEDS TO BE REMOVED, ITS JUST FOR SHOW RIGHT NOW*/
+#Following{
+    background-color: #d81515;
+}
+#footer_div{
+    background-color: #525354;
+    color: #fcfcfc;
+    width: 100%;
+    height: 40px;
+    position: fixed;
+    bottom: 0px;
+}
+/*will apply to all posts indivdually on the page, just sizing and backround
+shit*/
+.post_class{
+    background-color: #525354;
+    height: 140px;
+    width: 60%;
+    margin-left: 1px;
+	margin-top: 2px;
+}
+/*spacing and placement of the profile pic*/
+#poster_page_pic{
+    margin-left: 10px;
+    margin-top: 10px;
+}
+/*each score is div'ed with its arrow, floats the 2 divs left
+may need some display: inline-flex live the  nav bar*/
+.score_h4_and_arrow{
+    padding-left: 5px;
+}
+/*actual score gets spaced from its arrow*/
+.score{
+    padding-bottom: 6px;
+}
+/* basically three items per post. the port pic and arrows, the text part, and the
+post preview. first floatted lefft, second too, and post preview floated right. somehow make the post post_preview_div
+stay inline with the port pic when screen shrunk, maybe java script, idk*/
+#score_field_and_port_pic_div{
+    float: left;
+}
+#poster_info{
+    float: left;
+    margin-top: 5px;
+}
+#post_preview_div{
+    float: right;
+    padding-top: 20px;
+    padding-right: 20px;
+}
+
+#post_title{
+    margin-top: 25px;
+}

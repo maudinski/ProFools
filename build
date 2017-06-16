@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+# above shit tells bash to run this script with python
+# sub process for call function
+# sys for command line arguemtents and exit
+from subprocess import call
+import sys
+
+todos = []
+		
+
+for t in todos:
+	print("-", t)
+
+# arguments and their commands
+commands = { # add any more go files in this, call() takes command/util and aray of args
+	"go": ["go", "build", "src/main.go", "src/init.go", "src/content.go"],
+	"html": ["python", "pageCreator.py"]
+}
+
+
+# to print out commands
+def printCom(com):
+	for c in com:
+		print(c, end=" ")
+	print("")
+
+
+# if only argument is script name, just build all
+if len(sys.argv) == 1:
+	for k in commands:
+		call(commands[k]) # call is imported function
+		printCom(commands[k])
+	sys.exit(0)
+
+
+arg = sys.argv[1:]
+
+
+# sets up -h option for help 
+if arg == "-h":
+	for k in commands:
+		print (k, "runs:", end=" ")
+		printCom(commands[k])
+	print("saying neither runs both")
+	sys.exit(0)
+
+
+# go through and run commands
+for a in arg:
+	try:
+		call(commands[a])
+		printCom(commands[a])
+	except KeyError:
+		print("----", a, "does nothing ----")
+
+
+ 
