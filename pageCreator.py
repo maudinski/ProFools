@@ -11,13 +11,18 @@
 # links = any additional links(mainly for html files to link to js and css). blank list if not anything
 
 pages = {
-	"exhibitTop.html": [["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], 
-			["js/exhibit.js", "css/exhibit.css"]], # note 1
+
+	"exhibitTop.html": [["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
 	"exhibitBottom.html":[["htmlfiles/footer.html"],[]],# nextButtons.html
 	"post.html": [["htmlfiles/post.html"],[]],
-	"exhibit.css": [["cssfiles/header.css", "cssfiles/navbar.css", "cssfiles/sortbar.css", 
-						"cssfiles/footer.css", "cssfiles/post.css"],[]],# nextButtons.css
-	"exhibit.js":[["jsfiles/navbar.js", "jsfiles/header.js"],[]]#keep header.js at end
+	"exhibit.css": [["cssfiles/header.css", "cssfiles/navbar.css", "cssfiles/sortbar.css", "cssfiles/footer.css", "cssfiles/post.css"],[]],# nextButtons.css
+	"exhibit.js":[["jsfiles/navbar.js", "jsfiles/header.js"],[]],#keep header.js at end, it has the calling function
+
+
+	"404.html":[["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/404.html"],["js/404.js", "css/404.css"]],
+	"404.js":[["jsfiles/navbar.js", "jsfiles/header.js"],[]],
+	"404.css":[["cssfiles/header.css", "cssfiles/navbar.css"],[]]
+
 }
 
 # source of pieces, destination of pieced-together file

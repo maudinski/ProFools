@@ -48,7 +48,7 @@ type outsideStructureAbstractor struct{
 
 func (osa *outsideStructureAbstractor) initialize(){
 	osa.loaderFilesDir = "loaderfiles"
-	osa.picturesDir = "samplePictures"
+	osa.picturesDir = "pictureSamples"
 	osa.postHtmlFN = "post.html"
 	osa.dbUser = "root"
 	osa.dbPass = "test"
@@ -57,48 +57,57 @@ func (osa *outsideStructureAbstractor) initialize(){
 	osa.mixPostTable = "post_tb"
 }
 
-type OGHandler struct{
-	files Files
-	pageContent content
-	osa outsideStructureAbstractor
-}
-
 type customHandler struct {
 }
-
+// paths will be like this: 
+/*
+	/exhibit/mix/1
+	/exhibit/literature/0
+	/js/exhibit.js
+	/css/exhbit.css
+*/
 //still not real error checking done here
-func (handler *customHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
+func (h *customHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	log.Println(r.URL.Path)
-	if r.URL.Path == "/"{//somehow make it like they were requesting /exhibit/mix/0
-		w.Write(files.fd["exhibitTop.html"].data)
-		w.Write(pageContent.exhibits[0][0])
+	if r.URL.Path == "/"{								
+		w.Write(files.fd["exhibitTop.html"].data)	
+		w.Write(pageContent.exhibits[0][0])		
 		w.Write(files.fd["exhibitBottom.hmtl"].data)
 		return;
 	}	
 	pathParts := strings.Split(r.URL.Path, "/")[1:]//Split returns a blank at spot [0] if
 	switch pathParts[0] {
 		case "exhibit":			
-			handleExhibit(w, pathParts)
+			h.handleExhibit(w, pathParts)
 		case "port":
 		case "post":
 		case "css":	
-			handleCss(w, pathParts[1])
+			h.handleCss(w, pathParts[1])
 		case "picture":	
-			picData, err := ioutil.ReadFile(osa.picturesDir+"/"+pathParts[1])
-			if err == nil {
-				w.Write(picData)
-			} else {
-				log.Println("picData not read right:", err)
-			}
+			h.handlePic(w, osa.picturesDir+"/"+pathParts[1])
 		case "js":
-			w.Header().Add("Content-Type", "application/js")
-			w.Write(files.fd[pathParts[1]].data)
+			h.handleJs(w, pathParts[1])
 		default:
 			log.Println("(servehttp) hit the deafult:", r.URL.Path)
 	}
 	
 }
-func handleExhibit(w http.ResponseWriter, pathParts []string) {
+
+func (h *customHandler) handleJs(w http.ResponseWriter, jsfile string){	
+	w.Header().Add("Content-Type", "application/js")
+	w.Write(files.fd[jsfile].data)
+}
+
+func (h *customHandler) handlePic(w http.ResponseWriter, path string){
+	picData, err := ioutil.ReadFile(path)
+	if err == nil {
+		w.Write(picData)
+	} else {
+		log.Println("picData not read right:", err)
+	}
+}
+
+func (h *customHandler) handleExhibit(w http.ResponseWriter, pathParts []string) {
 	exhibit := pathParts[1]
 	pageNum, _ := strconv.Atoi(pathParts[2])
 	exhibitNum := getIndex(exhibit)
@@ -106,13 +115,14 @@ func handleExhibit(w http.ResponseWriter, pathParts []string) {
 	w.Write(pageContent.exhibits[exhibitNum][pageNum])
 	w.Write(files.fd["exhibitBottom.hmtl"].data)
 }	
-func handleCss(w http.ResponseWriter, cssFile string){
+
+func (h *customHandler) handleCss(w http.ResponseWriter, cssFile string){
 	w.Header().Add("Content-Type", "text/css")
 	w.Write(files.fd[cssFile].data)
 }
 
-func write404(w http.ResponseWriter){
-	
+func (h *customHandler) write404(w http.ResponseWriter){
+	w.Write(files.fd["404.html"].data)
 }
 
 func main() {
