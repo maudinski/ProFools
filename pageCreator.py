@@ -10,6 +10,11 @@
 # list of file names = names of the pieces for ending file
 # links = any additional links(mainly for html files to link to js and css). blank list if not anything
 
+# note 1: js/exhbiti and css/exhibit not because theyre not going to be stored in files call
+# css or js, but because thats how the serveHTTP in main.go rationalizes what its looking for
+# the browser will call for those (preloaded)files, and that method searches the cached files
+# misleading cause urls are patterned like directories, but thats not whats gonna happen here
+
 pages = {
 		
 	"exhibitTop.html": [["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
@@ -65,7 +70,4 @@ for k, v in pages.items():
 	create(k, v[0], v[1])
 
 
-# note 1: js/exhbiti and css/exhibit not because theyre not going to be stored in files call
-# css or js, but because thats how the serveHTTP in main.go rationalizes what its looking for
-# the browser will call for those (preloaded)files, and that method searches the cached files
-# misleading cause urls are patterned like directories, but thats not whats gonna happen here
+
