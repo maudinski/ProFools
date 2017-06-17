@@ -50,7 +50,7 @@ type outsideStructureAbstractor struct{
 
 func (osa *outsideStructureAbstractor) initialize(){
 	osa.loaderFilesDir = "loaderfiles"
-	osa.picturesDir = "pictureSamples"
+	osa.picturesDir = "picturesamples"
 	osa.postHtmlFN = "post.html"
 	osa.dbUser = "root"
 	osa.dbPass = "test"
