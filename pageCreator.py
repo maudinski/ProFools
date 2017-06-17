@@ -11,7 +11,7 @@
 # links = any additional links(mainly for html files to link to js and css). blank list if not anything
 
 pages = {
-
+		
 	"exhibitTop.html": [["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
 	"exhibitBottom.html":[["htmlfiles/footer.html"],[]],# nextButtons.html
 	"post.html": [["htmlfiles/post.html"],[]],
