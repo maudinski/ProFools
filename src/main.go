@@ -3,11 +3,12 @@
 // no sure how but need a favicon
 // if specific content type isnt working, it may be the
 // the log.Println()'s are obviously a bottle neck, get rid of them (not the error ones)
-// put all css files into one file or use the templating for go. point is, less dependent files makes less requests from browser
 // in pageCreater, make it scrape out comments and white unnessecarry white space
 // might be good to change file permisions for all these files to add an extra layer of security, not sure though
 // vegeta load testing utility
 // check out the web slot in useful shit.txt
+// unless i can combat every case, learn to recover from panic...
+// idk if this method of doing to urls is efficient. gotta load test
 //TODO IDEA
 package main
 
@@ -17,6 +18,7 @@ import (
 	"strings"
 	"io/ioutil"
 	"strconv"
+	"errors"
 )
 
 /*for now the key will be the file name, with extension*/
@@ -59,20 +61,17 @@ func (osa *outsideStructureAbstractor) initialize(){
 
 type customHandler struct {
 }
-// paths will be like this: 
-/*
+/*******************************************
+paths will be like this: 
 	/exhibit/mix/1
 	/exhibit/literature/0
 	/js/exhibit.js
 	/css/exhbit.css
-*/
+*********************************************/
 //still not real error checking done here
 func (h *customHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
-	log.Println(r.URL.Path)
 	if r.URL.Path == "/"{								
-		w.Write(files.fd["exhibitTop.html"].data)	
-		w.Write(pageContent.exhibits[0][0])		
-		w.Write(files.fd["exhibitBottom.hmtl"].data)
+		h.sendExhibit(w, 0, 0)
 		return;
 	}	
 	pathParts := strings.Split(r.URL.Path, "/")[1:]//Split returns a blank at spot [0] if
@@ -82,22 +81,36 @@ func (h *customHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 		case "port":
 		case "post":
 		case "css":	
-			h.handleCss(w, pathParts[1])
+			h.handleJsAndCss(w, pathParts[1], "text/css")
 		case "picture":	
 			h.handlePic(w, osa.picturesDir+"/"+pathParts[1])
 		case "js":
-			h.handleJs(w, pathParts[1])
+			h.handleJsAndCss(w, pathParts[1], "application/js")
 		default:
 			log.Println("(servehttp) hit the deafult:", r.URL.Path)
 	}
 	
 }
+/************************************************
+TODO i think the blank still technically gets all the data copied over, 
+so larg-ish amounts of data are getting stored then trashed for this.
+maybe chane files.fd to hold *fileData instead of actual file data. Not 
+sure how that would work, but if it did, then this would only copy over 
+an 8 byte pointer. Better than the entire []byte
+***********************************************/
 
-func (h *customHandler) handleJs(w http.ResponseWriter, jsfile string){	
-	w.Header().Add("Content-Type", "application/js")
-	w.Write(files.fd[jsfile].data)
+//some sites use seperate servers for js and css
+func (h *customHandler) handleJsAndCss(w http.ResponseWriter, f string, ctype string){	
+	w.Header().Add("Content-Type", ctype)
+	if _, ok := files.fd[f]; ok { //check above for worry on this
+		w.Write(files.fd[f].data)
+		return;
+	} else {
+		log.Println("js or css file error:", f)	
+	}
 }
 
+//reddit has a seperate server just for pics
 func (h *customHandler) handlePic(w http.ResponseWriter, path string){
 	picData, err := ioutil.ReadFile(path)
 	if err == nil {
@@ -107,22 +120,47 @@ func (h *customHandler) handlePic(w http.ResponseWriter, path string){
 	}
 }
 
+//all if blocks are error checks
+//seems alright
+//this error checking works fine but it fucks with the java script
+//TODO do a redirect, so as to send back a full url for the navbar javascript
 func (h *customHandler) handleExhibit(w http.ResponseWriter, pathParts []string) {
+	length := len(pathParts)
+	log.Println("length is :", length, "|path is:",pathParts)
+	if length == 1{
+		h.sendExhibit(w, 0, 0)//send /mix/0
+		return
+	}
 	exhibit := pathParts[1]
-	pageNum, _ := strconv.Atoi(pathParts[2])
-	exhibitNum := getIndex(exhibit)
+	exhibitNum, er := getIndex(exhibit)
+	if er != nil { //if they fucked up the exhibit, send 404
+		h.send404(w)			//everything else just gets the 'index' (mix/0)
+		return	
+	}
+	if length == 2 {
+		h.sendExhibit(w, exhibitNum, 0)//send /whateveritis/0
+		return
+	}
+	pageNum, err := strconv.Atoi(pathParts[2])
+	if err != nil {
+		h.sendExhibit(w, exhibitNum, 0)	
+		return
+	}
 	w.Write(files.fd["exhibitTop.html"].data)
 	w.Write(pageContent.exhibits[exhibitNum][pageNum])
 	w.Write(files.fd["exhibitBottom.hmtl"].data)
 }	
 
-func (h *customHandler) handleCss(w http.ResponseWriter, cssFile string){
-	w.Header().Add("Content-Type", "text/css")
-	w.Write(files.fd[cssFile].data)
+//no error check needed
+func (h *customHandler) send404(w http.ResponseWriter){
+	w.Write(files.fd["404.html"].data)
 }
 
-func (h *customHandler) write404(w http.ResponseWriter){
-	w.Write(files.fd["404.html"].data)
+//nees to take r *http.Request eventually for the cookies
+func (h *customHandler) sendExhibit(w http.ResponseWriter, exhibitNum int, pageNum int){
+	w.Write(files.fd["exhibitTop.html"].data)
+	w.Write(pageContent.exhibits[exhibitNum][pageNum])
+	w.Write(files.fd["exhibitTop.html"].data)
 }
 
 func main() {
@@ -141,14 +179,14 @@ func main() {
 		log.Fatal("(main)ListenAndServe error:", err)
 	}
 }
-//ommenting out so that compiler reminds me i have to write this1
-func getIndex(exhibit string) int {
+
+func getIndex(exhibit string) (int, error){
 
 	for i, val := range AllExhibits{
 		if exhibit == val {
-			return i	
+			return i, nil	
 		}	
 	}
 	
-	return 0
+	return 0, errors.New("fuck")
 }
