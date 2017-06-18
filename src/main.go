@@ -9,6 +9,7 @@
 // check out the web slot in useful shit.txt
 // unless i can combat every case, learn to recover from panic...
 // idk if this method of doing to urls is efficient. gotta load test
+//get rid of all log.fatals
 //TODO IDEA
 package main
 
@@ -25,7 +26,8 @@ import (
 var files Files
 var pageContent content
 var osa outsideStructureAbstractor
-
+var sm SessionManager
+var am AccountManager
 
 /************************************************
 meant so if i change a password, or a directory structure, or my table/database
@@ -43,8 +45,11 @@ type outsideStructureAbstractor struct{
 	dbUser string
 	dbPass string // probably not the safest thing to do
 	dbHostAndPort string
-	db string
-	mixPostTable string
+	
+	db string  //change this later so less confusion cause 2 databases. this is for posts
+
+	users_db string //for users and passwords
+
 
 }
 
@@ -56,10 +61,11 @@ func (osa *outsideStructureAbstractor) initialize(){
 	osa.dbPass = "test"
 	osa.dbHostAndPort = ""
 	osa.db = "test_db2"
-	osa.mixPostTable = "post_tb"
+	osa.users_db = "test_users_db2"
+	osa.users_table = "users"
 }
 
-type customHandler struct {
+type handler struct {
 }
 /*******************************************
 paths will be like this: 
@@ -69,17 +75,23 @@ paths will be like this:
 	/css/exhbit.css
 *********************************************/
 //still not real error checking done here
-func (h *customHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	if r.URL.Path == "/"{								
-		h.sendExhibit(w, 0, 0)
+		h.sendExhibit(w, r, 0, 0)
 		return;
-	}	
+	}
+	//factor this out since most request wont be POST
+	if r.Method == "POST" {
+		h.handlePOST(w, r)
+		return
+	}
+	//i wont factor this out since most requests will be GET
 	pathParts := strings.Split(r.URL.Path, "/")[1:]//Split returns a blank at spot [0] if
 	switch pathParts[0] {
 		case "exhibit":			
-			h.handleExhibit(w, pathParts)
+			h.handleExhibit(w, r, pathParts)
 		case "port":
-		case "post":
+		case "post"://this is looking for a post
 		case "css":	
 			h.handleJsAndCss(w, pathParts[1], "text/css")
 		case "picture":	
@@ -87,12 +99,41 @@ func (h *customHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 		case "js":
 			h.handleJsAndCss(w, pathParts[1], "application/js")
 		default:
+			h.sendExhibit(w, r, 0, 0)
 			log.Println("(servehttp) hit the deafult:", r.URL.Path)
 	}
 	
 }
+
+func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request){
+	//get POST body
+	postInfo := ""
+	switch /*some designated shit in post body*/ {
+	/*logging in*/
+		case "login":
+			h.handleLogin(w, r, postInfo)//postinfo to not read it again	
+		case "postpost":
+		case "signup"://maybe try and verify with javascript first?
+		case "comment"://might not do this for a while lol
+		case "upvote":
+		case "doubleupvote":
+}
+//maybe just send back a cookie and the homepage/currentpage, then js will alter the rest
+//this is pseudo coded as fuck
+func (h *handler) handleLogin(w http.ResponseWriter, r *request, postInfo string){
+	valid, err := am.VerifyLogin(handle, email, pass)//either handle or email will be null
+	handle := 
+	if valid {
+		id := sm.StartSession(handle)
+		c = &http.Cookie(Name: "session", Value: strings.Itoa(id))
+		http.SetCookie(w, c)
+http.Redirect(q, r, "/", 200) /*OR*/ h.sendExhibit(w, r, 0, 0)
+	}
+}
+
 /************************************************
-TODO i think the blank still technically gets all the data copied over, 
+TODO do this for sure man, shouldnt be too hard
+i think the blank still technically gets all the data copied over, 
 so larg-ish amounts of data are getting stored then trashed for this.
 maybe chane files.fd to hold *fileData instead of actual file data. Not 
 sure how that would work, but if it did, then this would only copy over 
@@ -100,7 +141,7 @@ an 8 byte pointer. Better than the entire []byte
 ***********************************************/
 
 //some sites use seperate servers for js and css
-func (h *customHandler) handleJsAndCss(w http.ResponseWriter, f string, ctype string){	
+func (h *handler) handleJsAndCss(w http.ResponseWriter, f string, ctype string){	
 	w.Header().Add("Content-Type", ctype)
 	if _, ok := files.fd[f]; ok { //check above for worry on this
 		w.Write(files.fd[f].data)
@@ -111,7 +152,7 @@ func (h *customHandler) handleJsAndCss(w http.ResponseWriter, f string, ctype st
 }
 
 //reddit has a seperate server just for pics
-func (h *customHandler) handlePic(w http.ResponseWriter, path string){
+func (h *handler) handlePic(w http.ResponseWriter, path string){
 	picData, err := ioutil.ReadFile(path)
 	if err == nil {
 		w.Write(picData)
@@ -124,54 +165,85 @@ func (h *customHandler) handlePic(w http.ResponseWriter, path string){
 //seems alright
 //this error checking works fine but it fucks with the java script
 //TODO do a redirect, so as to send back a full url for the navbar javascript
-func (h *customHandler) handleExhibit(w http.ResponseWriter, pathParts []string) {
+func(h *handler)handleExhibit(w http.ResponseWriter, r *http.Request, pathParts []string) {
 	length := len(pathParts)
 	log.Println("length is :", length, "|path is:",pathParts)
 	if length == 1{
-		h.sendExhibit(w, 0, 0)//send /mix/0
+		h.sendExhibit(w, r, 0, 0)//send /mix/0
 		return
 	}
 	exhibit := pathParts[1]
 	exhibitNum, er := getIndex(exhibit)
 	if er != nil { //if they fucked up the exhibit, send 404
-		h.send404(w)			//everything else just gets the 'index' (mix/0)
+		h.send404(w, r)			//everything else just gets the 'index' (mix/0)
 		return	
 	}
 	if length == 2 {
-		h.sendExhibit(w, exhibitNum, 0)//send /whateveritis/0
+		h.sendExhibit(w, r, exhibitNum, 0)//send /whateveritis/0
 		return
 	}
 	pageNum, err := strconv.Atoi(pathParts[2])
 	if err != nil {
-		h.sendExhibit(w, exhibitNum, 0)	
+		h.sendExhibit(w, r, exhibitNum, 0)	
 		return
 	}
-	w.Write(files.fd["exhibitTop.html"].data)
-	w.Write(pageContent.exhibits[exhibitNum][pageNum])
-	w.Write(files.fd["exhibitBottom.hmtl"].data)
+	h.sendExhibit(w, r, exhibitNum, pageNum)
 }	
-
+/********************************************
+TODO 
+for now im doing these if else but they might be unecessary. See if i can use javascript
+to tell if a cookie is on browser or not, then dynamically change the top right to either
+say "sign up sign in" or "sabio667 sign out" or something
+and YEAH javascript can handle cookie shit https://www.w3schools.com/js/js_cookies.asp
+-------------------------------------------------------------------------------------
+(below sounds expensive on request times. if it ever gets a lot of traffic then yeah)
+...unless i impliment that cool side panel of "things that might interest you"
+which i fucking should
+unless unless i request that info with javascript too
+*******************************************/
 //no error check needed
-func (h *customHandler) send404(w http.ResponseWriter){
+func (h *handler) send404(w http.ResponseWriter, r *http.Request){
+	cookie, err := r.Cookie("session")
+	if err == nil {
+		log.Println("(hanlder.sendExhibit)get the milk:", cookie.Value)
+		//send the exhibit with the sign out and "username" in top right corner	
+	} else {
+		log.Println("(handler.sendExhibit)dont get the milk")
+		//send the exhibit with the signup/sign in links	
+	}
 	w.Write(files.fd["404.html"].data)
 }
 
-//nees to take r *http.Request eventually for the cookies
-func (h *customHandler) sendExhibit(w http.ResponseWriter, exhibitNum int, pageNum int){
+//when creating cookies you give them names, so that you can give multiple ones.
+//by saying cookie, err := r.Cookie("session"), im asking for the cookie named
+//session. Returns an error if its not there
+func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, page int){
+	cookie, err := r.Cookie("session")
+	if err == nil {
+		log.Println("(hanlder.sendExhibit)get the milk", cookie.Value)
+		//send the exhibit with the sign out and "username" in top right corner	
+	} else {
+		log.Println("(handler.sendExhibit)dont get the milk")
+		//send the exhibit with the signup/sign in links	
+	}
 	w.Write(files.fd["exhibitTop.html"].data)
-	w.Write(pageContent.exhibits[exhibitNum][pageNum])
+	w.Write(pageContent.exhibits[exh][page])
 	w.Write(files.fd["exhibitTop.html"].data)
 }
 
 func main() {
 	
+
+	//TODO make these return errors and handle the log.Fatals out here
 	osa.initialize()
 	files.initialize()
 	pageContent.initialize()//need to go through and use osa in this
-	
+	am.initialize()
+
+
 	go pageContent.updateForever()//same ^^
 
-	http.Handle("/", new(customHandler))
+	http.Handle("/", new(handler))
 	log.Println("Starting listening....")
 	err := http.ListenAndServe(":8080", nil)
 

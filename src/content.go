@@ -22,7 +22,7 @@ import(
 i want to think about it. Point is its all the data from a post, which is
 an entry in the db. idk
 *******************************/
-type entry struct {
+type postEntry struct {
 	userID int
 	ups int
 	doubleups int
@@ -33,7 +33,7 @@ type entry struct {
 	screenname string
 }
 
-func (e entry) String() string {
+func (e postEntry) String() string {
 	return fmt.Sprintf("userID: %v -- ups: %v -- doubleups: %v -- date: %v -- time: %v -- title: %v -- pagename: %v -- screenname: %v",
 						e.userID, e.ups, e.doubleups, e.date, e.time, e.title, e.pagename, e.screenname)
 }
@@ -55,7 +55,7 @@ type content struct {
 
 type pages [STORED_PAGES][]byte
 
-//these have to be the same as the table names in mysql
+//THESE HAVE TO BE THE SAME AS THE TABLE NAME IN MYSQL
 //since its passed to getTopPosts as paramater. probably will use it some handle functions
 //from main
 var AllExhibits []string = []string{
@@ -146,7 +146,7 @@ details: sets up a query and an array to hold the entries that will be returned,
 		entry's fields, then stores it in the array. returns the array
 ***********************************************************************/
 // update to slices and/or a global variable for size isntead of all these 10's
-func (c *content)  getTopPosts(table string) ([STORED_PAGES * POSTS_PER_PAGE]entry, error){	
+func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEntry, error){	
 	
 	var size string = strconv.Itoa(STORED_PAGES*POSTS_PER_PAGE)
 	q := "select * from "+table+" order by upvotes desc limit "+size
@@ -159,7 +159,7 @@ func (c *content)  getTopPosts(table string) ([STORED_PAGES * POSTS_PER_PAGE]ent
 	}
 	defer rows.Close()
 
-	e := new(entry)
+	e := new(postEntry)
 	for i := 0; rows.Next(); i++{
 		err = rows.Scan(&e.userID, &e.ups, &e.doubleups, &e.date, &e.time, 
 						&e.title, &e.pagename, &e.screenname)
@@ -194,7 +194,7 @@ TODO: currently makes page full of every thing in the entry array, so whenever i
 	that in here. also, needs to eventually deal with port pics and shit (idk how yet)
 **********************************************************/
 // hard coded 10 here, update to slice or global variable for size
-func (c *content) createContent(exhInd int, entries [STORED_PAGES*POSTS_PER_PAGE]entry) {
+func(c *content)createContent (exhInd int, entries [STORED_PAGES*POSTS_PER_PAGE]postEntry){
 	page := ""
 	pageNum := 0
 	firstPass := true
