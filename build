@@ -5,7 +5,7 @@
 from subprocess import call
 import sys
 
-todos = ["majin bu the html files again",""]
+todos = ["majin bu the html files again"]
 		
 
 for t in todos:
@@ -13,7 +13,8 @@ for t in todos:
 
 # arguments and their commands
 commands = { # add any more go files in this, call() takes command/util and aray of args
-	"go": ["go", "build", "src/main.go", "src/init.go", "src/content.go"],
+	"go": ["go", "build", "src/main.go", "src/init.go", "src/content.go",
+			"src/accounts.go", "src/sessions.go"],
 	"html": ["python", "pageCreator.py"]
 }
 

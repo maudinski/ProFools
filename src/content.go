@@ -151,7 +151,7 @@ func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEnt
 	var size string = strconv.Itoa(STORED_PAGES*POSTS_PER_PAGE)
 	q := "select * from "+table+" order by upvotes desc limit "+size
 
-	var entries [STORED_PAGES*POSTS_PER_PAGE]entry
+	var entries [STORED_PAGES*POSTS_PER_PAGE]postEntry
 	
 	rows, err := (c.db).Query(q)
 	if err != nil { 

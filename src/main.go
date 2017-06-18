@@ -49,7 +49,7 @@ type outsideStructureAbstractor struct{
 	db string  //change this later so less confusion cause 2 databases. this is for posts
 
 	users_db string //for users and passwords
-
+	users_table string
 
 }
 
@@ -80,13 +80,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 		h.sendExhibit(w, r, 0, 0)
 		return;
 	}
+	pathParts := strings.Split(r.URL.Path, "/")[1:]//Split returns a blank at spot [0] if
 	//factor this out since most request wont be POST
 	if r.Method == "POST" {
-		h.handlePOST(w, r)
+		h.handlePOST(w, r, pathParts)
 		return
 	}
 	//i wont factor this out since most requests will be GET
-	pathParts := strings.Split(r.URL.Path, "/")[1:]//Split returns a blank at spot [0] if
 	switch pathParts[0] {
 		case "exhibit":			
 			h.handleExhibit(w, r, pathParts)
@@ -98,6 +98,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 			h.handlePic(w, osa.picturesDir+"/"+pathParts[1])
 		case "js":
 			h.handleJsAndCss(w, pathParts[1], "application/js")
+		case "signin":
+			w.Write(files.fd["signin.html"].data)
 		default:
 			h.sendExhibit(w, r, 0, 0)
 			log.Println("(servehttp) hit the deafult:", r.URL.Path)
@@ -105,30 +107,46 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	
 }
 
-func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request){
-	//get POST body
-	postInfo := ""
-	switch /*some designated shit in post body*/ {
-	/*logging in*/
-		case "login":
-			h.handleLogin(w, r, postInfo)//postinfo to not read it again	
+func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts []string){
+	
+	switch  pathParts[0]{
+		case "verifysignin":
+			h.handleSignin(w, r)
+		case "logout":
+			h.handleSignout(w, r)
 		case "postpost":
-		case "signup"://maybe try and verify with javascript first?
-		case "comment"://might not do this for a while lol
-		case "upvote":
-		case "doubleupvote":
+		case "signup":
+		default:
+			log.Println("Hit the default for POST")
+			h.sendExhibit(w, r, 0, 0)
+	}
 }
+
 //maybe just send back a cookie and the homepage/currentpage, then js will alter the rest
 //this is pseudo coded as fuck
-func (h *handler) handleLogin(w http.ResponseWriter, r *request, postInfo string){
-	valid, err := am.VerifyLogin(handle, email, pass)//either handle or email will be null
-	handle := 
+func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+	handle := r.Form.Get("handle")
+	password := r.Form.Get("password")
+	valid := am.VerifySignin(handle, password)
 	if valid {
 		id := sm.StartSession(handle)
-		c = &http.Cookie(Name: "session", Value: strings.Itoa(id))
+		val := strconv.Itoa(id)+"|"+handle
+		c := &http.Cookie{Name: "session", Value: val}
 		http.SetCookie(w, c)
-http.Redirect(q, r, "/", 200) /*OR*/ h.sendExhibit(w, r, 0, 0)
+		//cookie is stored in request, so sending a page now will still send
+		//a exhibitTopSignedOut.html, since they check r.Cookie. so its dirty
+		//but just manually send the pages
+		w.Write(files.fd["exhibitTopSignedIn.html"].data)
+		w.Write(pageContent.exhibits[0][0])
+		w.Write(files.fd["exhibitBottom.html"].data)
+	} else {
+		w.Write(files.fd["failedSignIn.html"].data)	
 	}
+}
+
+func (h *handler)  handleSignout(w http.ResponseWriter, r *http.Request){
+		
 }
 
 /************************************************
@@ -204,13 +222,13 @@ unless unless i request that info with javascript too
 //no error check needed
 func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 	cookie, err := r.Cookie("session")
-	if err == nil {
-		log.Println("(hanlder.sendExhibit)get the milk:", cookie.Value)
-		//send the exhibit with the sign out and "username" in top right corner	
+	
+	if err == nil || !sm.VerifySessionCookie(cookie){
+		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	} else {
-		log.Println("(handler.sendExhibit)dont get the milk")
-		//send the exhibit with the signup/sign in links	
+		w.Write(files.fd["exhibitTopSignedOut.html"].data)
 	}
+	
 	w.Write(files.fd["404.html"].data)
 }
 
@@ -219,14 +237,13 @@ func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 //session. Returns an error if its not there
 func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, page int){
 	cookie, err := r.Cookie("session")
-	if err == nil {
-		log.Println("(hanlder.sendExhibit)get the milk", cookie.Value)
-		//send the exhibit with the sign out and "username" in top right corner	
+
+	if err == nil || !sm.VerifySessionCookie(cookie) {
+		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	} else {
-		log.Println("(handler.sendExhibit)dont get the milk")
-		//send the exhibit with the signup/sign in links	
+		w.Write(files.fd["exhibitTopSignedOut.html"].data)
 	}
-	w.Write(files.fd["exhibitTop.html"].data)
+
 	w.Write(pageContent.exhibits[exh][page])
 	w.Write(files.fd["exhibitTop.html"].data)
 }
@@ -239,8 +256,9 @@ func main() {
 	files.initialize()
 	pageContent.initialize()//need to go through and use osa in this
 	am.initialize()
-
-
+	sm.initialize()
+	
+	//go sm.SessionSweep()
 	go pageContent.updateForever()//same ^^
 
 	http.Handle("/", new(handler))

@@ -26,7 +26,12 @@ pages = {
 
 	"404.html":[["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/404.html"],["js/404.js", "css/404.css"]],
 	"404.js":[["jsfiles/navbar.js", "jsfiles/header.js"],[]],
-	"404.css":[["cssfiles/header.css", "cssfiles/navbar.css"],[]]
+	"404.css":[["cssfiles/header.css", "cssfiles/navbar.css"],[]],
+
+	"signin.html":[["htmlfiles/header.html", "htmlfiles/signin.html"],["css/signin.css"]],
+	"signin.css":[["cssfiles/header.css"],[]],
+
+	"failedSignIn.html":[["htmlfiles/header.html", "htmlfiles/failedSignIn.html"],["css/signin.css"]],
 
 }
 

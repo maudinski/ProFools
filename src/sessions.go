@@ -4,6 +4,9 @@ package main
 import(
 	"time"
 	"log"
+	"strconv"
+	"strings"
+	"net/http"
 )
 
 //some power of 2, just cause
@@ -76,9 +79,6 @@ type SessionManager struct {
 	//it starts it wont cause some huge ass bugs
 	lastDeleted int //for use in session sweep to chain together the sweeped spots
 	
-	//this may not be useful but ill keep it here just in case
-	farthestActiveSession int
-	
 	//holds the amount of time that a session is allowed to be inactive for
 	//end the session if its longer
 	inactiveAllowance time.Time
@@ -101,16 +101,17 @@ type session struct {
 func (sm *SessionManager) initialize(){
 	sm.sessions = make([]session, initialSize)
 	sm.currentSize = initialSize
-	lowestPlacement = -1
-	farthestPlacementYet = 0
-	lastDeleted = -1
-	farthesActiveSession = -1//might not need this
-	inactiveAllowance = //idk
+	sm.lowestPlacement = -1
+	sm.farthestPlacementYet = 0
+	sm.lastDeleted = -1
+	sm.inactiveAllowance = time.Now() //BUG BUG BUG setting this for compiler, since im
+	//not using it yet. not even sure if this is going to be a time.Time object,
+	//needs to be the maximum time that a session can go unused. Used by sessionSweep
 }
 
 //check for not only if the sessions is active, but also if the handle is the same one.
 //session spot may be active because some other user took that session spot
-func (sm *SessionManager)VerifySesion(id int, handle string) bool {
+func (sm *SessionManager)VerifySession(id int, handle string) bool {
 	s := sm.sessions[id-1000000]
 	if s.active && s.handle == handle{
 		return true	
@@ -118,8 +119,18 @@ func (sm *SessionManager)VerifySesion(id int, handle string) bool {
 	return false
 }
 
+func (sm *SessionManager) VerifySessionCookie(c *http.Cookie) bool {
+	id, handle, err := sm.ParseCookie(c)
+	if err != nil{
+		log.Println("sm,verifySession) smParseCookie returned err", err)
+		return false	
+	}
+	return sm.VerifySession(id, handle)	
+}
+
+
 //retuns the session id. the cookie is made with this id in h.handleLogin
-func (sm *SessionManager) StartSession(handle string) (int, error){
+func (sm *SessionManager) StartSession(handle string) int{
 	rid := sm.nextRawId()
 	sm.sessions[rid].active = true
 	sm.sessions[rid].nextBlankSpot = -1 //for easy sweeping, just do it now
@@ -139,12 +150,12 @@ func (sm *SessionManager) EndSession(id int){
 //this function will return the ID and also update the chains 
 //the calling function (StartSession) will set the rest of the values in the session
 //RawID means staight index. Unraw would then mean with the 1000000 added
-//kinda pseudo coded, check the logic
-func (sm *SessionManager) nextRawId(){
+//BUG BUG BUG kinda pseudo coded, check the logic
+func (sm *SessionManager) nextRawId() int{
 	index := 0
 	if sm.lowestPlacement == -1 {// keep this consistent, nextBlankSpot -1 if the next is
 		index = sm.farthestPlacementYet   // the fathestYet
-		sm.farthestPlacemnetYet++
+		sm.farthestPlacementYet++
 		sm.resizeCheck()//if we're moving the farthestPllacementYet, then may have to
 	} else {												//resize
 		index = sm.lowestPlacement  
@@ -158,7 +169,7 @@ func (sm *SessionManager) resizeCheck(){
 	if sm.beingResized{
 		return	
 	}
-	if sm.currentSize*.75 <= sm.farthesPlacementYet{
+	if .75*float64(sm.currentSize)<= float64(sm.farthestPlacementYet){
 		go sm.resize()	
 	}
 }
@@ -175,14 +186,18 @@ func (sm *SessionManager) resize(){
 //if planning to keep people logged in indefinitly then this should only
 //check for the session.active to be false, other wise, if logging people
 //out after a certain time, this also has to compare the time.Time shit
+//it should do the time.Time thing anyways around everyweek or so, since
+//people sign in from random computers some times, then ill just have
+//active sessions that will never get used
+//but the session.active sweep (for actual sign outs) should happen often
 func (sm *SessionManager) SessionSweep(){
 	
 }
 
 //not perfect error checking, if someone fucks with the cookie and sends
 //some messed up stuff back this wont work
-func (sm *SessionManager) CookieParse(c *http.Cookie) (int, string, error){
-	parts := strings.Split(Cookie.Value, "|")
+func (sm *SessionManager) ParseCookie(c *http.Cookie) (int, string, error){
+	parts := strings.Split(c.Value, "|")
 	id, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return 0, "", err	
