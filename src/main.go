@@ -76,6 +76,7 @@ paths will be like this:
 *********************************************/
 //still not real error checking done here
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
+	log.Println(r.URL.Path, r.Method)
 	if r.URL.Path == "/"{								
 		h.sendExhibit(w, r, 0, 0)
 		return;
@@ -223,10 +224,10 @@ unless unless i request that info with javascript too
 func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 	cookie, err := r.Cookie("session")
 	
-	if err == nil || !sm.VerifySessionCookie(cookie){
-		w.Write(files.fd["exhibitTopSignedIn.html"].data)
-	} else {
+	if err != nil || !sm.VerifySessionCookie(cookie){
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
+	} else {
+		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	}
 	
 	w.Write(files.fd["404.html"].data)
@@ -238,10 +239,10 @@ func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, page int){
 	cookie, err := r.Cookie("session")
 
-	if err == nil || !sm.VerifySessionCookie(cookie) {
-		w.Write(files.fd["exhibitTopSignedIn.html"].data)
-	} else {
+	if err != nil || !sm.VerifySessionCookie(cookie) {
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
+	} else {
+		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	}
 
 	w.Write(pageContent.exhibits[exh][page])

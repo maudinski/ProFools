@@ -17,21 +17,22 @@
 
 pages = {
 		
-	"exhibitTop.html": [["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
+	"exhibitTopSignedIn.html": [["htmlfiles/signedInHeader.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
+	"exhibitTopSignedOut.html": [["htmlfiles/signedOutHeader.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
 	"exhibitBottom.html":[["htmlfiles/footer.html"],[]],# nextButtons.html
 	"post.html": [["htmlfiles/post.html"],[]],
 	"exhibit.css": [["cssfiles/header.css", "cssfiles/navbar.css", "cssfiles/sortbar.css", "cssfiles/footer.css", "cssfiles/post.css"],[]],# nextButtons.css
 	"exhibit.js":[["jsfiles/navbar.js", "jsfiles/header.js"],[]],#keep header.js at end, it has the calling function
 
 
-	"404.html":[["htmlfiles/header.html", "htmlfiles/navbar.html", "htmlfiles/404.html"],["js/404.js", "css/404.css"]],
-	"404.js":[["jsfiles/navbar.js", "jsfiles/header.js"],[]],
-	"404.css":[["cssfiles/header.css", "cssfiles/navbar.css"],[]],
+	"404.html":[["htmlfiles/404.html"],[]],
+	"404.js":[[],[]],
+	"404.css":[[],[]],
 
-	"signin.html":[["htmlfiles/header.html", "htmlfiles/signin.html"],["css/signin.css"]],
+	"signin.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/signin.html"],["css/signin.css"]],
 	"signin.css":[["cssfiles/header.css"],[]],
 
-	"failedSignIn.html":[["htmlfiles/header.html", "htmlfiles/failedSignIn.html"],["css/signin.css"]],
+	"failedSignIn.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/failedSignIn.html"],["css/signin.css"]],
 
 }
 
