@@ -1,5 +1,5 @@
 // TODO need to get rid of majin bu symbols from html files created with python. Use clarks shit maybe or idk
-//IDEA TODO these are notes and todos
+// some logic in EndSessioion/signout needs to be re-thought
 // no sure how but need a favicon
 // if specific content type isnt working, it may be the
 // the log.Println()'s are obviously a bottle neck, get rid of them (not the error ones)
@@ -10,7 +10,9 @@
 // unless i can combat every case, learn to recover from panic...
 // idk if this method of doing to urls is efficient. gotta load test
 //get rid of all log.fatals
-//TODO IDEA
+//end TODO s
+
+//main function is at the bottom
 package main
 
 import (
@@ -21,22 +23,18 @@ import (
 	"strconv"
 	"errors"
 )
-
-/*for now the key will be the file name, with extension*/
+//all the globals used around the program. All are only used in this file for now,
+//except osa
 var files Files
 var pageContent content
 var osa outsideStructureAbstractor
 var sm SessionManager
 var am AccountManager
 
-/************************************************
-meant so if i change a password, or a directory structure, or my table/database
-names in sql, or anything that is outside the scope of go code, i wont have to 
-sift through a fuckton of code to change it. just gotta change what newOSA() 
-initializes shit it
-
-to be used in content.go for db, table, and sql password. init.go for file loading
-************************************************/
+//meant so if i change a password, or a directory structure, or my table/database
+//names in sql, or anything that is outside the scope of go code, i wont have to 
+//sift through a fuckton of code to change it. just gotta change what osa.initialize() 
+//initializes shit it. used all over the place
 type outsideStructureAbstractor struct{
 	loaderFilesDir string
 	picturesDir string	
@@ -53,6 +51,7 @@ type outsideStructureAbstractor struct{
 
 }
 
+//initializes the osa
 func (osa *outsideStructureAbstractor) initialize(){
 	osa.loaderFilesDir = "loaderfiles"
 	osa.picturesDir = "picturesamples"
@@ -65,16 +64,28 @@ func (osa *outsideStructureAbstractor) initialize(){
 	osa.users_table = "users"
 }
 
+//cutsom handler. Nothing in it, just necessary for http.Handle
 type handler struct {
 }
-/*******************************************
-paths will be like this: 
-	/exhibit/mix/1
-	/exhibit/literature/0
-	/js/exhibit.js
-	/css/exhbit.css
-*********************************************/
-//still not real error checking done here
+
+//paths will be like this: 
+//	/exhibit/mix/1
+//	/exhibit/literature/0
+//	/js/exhibit.js
+//	/css/exhbit.css
+
+//this makes handler impliment the interface that http.Handle needs
+//this is the main logic of all requests. All requests start here. 
+//3 stages to this function so far:
+//if theyre requesting "/", then they want the homepage. send it and return.
+//if theyre using the "POST" method, then theyre trying to sign in or post a post or 
+//	something like that. Handle that in another function cause thats not the most common
+//	method of request
+//if its not the other 2, then its a simple get. Note: url patterns are not
+//	representitive of directories, theyre just used for internal shit, so we know what
+//	to send back. something like "/exhbiit/mix/7" will be parsed into a slice like this:
+//	["exhbibit", "mix", "7"] (thats pathParts). switch statement in here evaluates
+// 	pathParts[0]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	log.Println(r.URL.Path, r.Method)
 	if r.URL.Path == "/"{								
@@ -110,6 +121,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	
 }
 
+//handles shit with method=="POST". evaluates pathParts, passed to it, in the switch
+//statemnet
 func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts []string){
 	
 	switch  pathParts[0]{
@@ -124,6 +137,8 @@ func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts [
 			h.sendExhibit(w, r, 0, 0)
 	}
 }
+
+//this works for now. Just ends the session, then sends back the home page.
 //TODO delete cookie, or set the value to "". then handle sign in will first check for
 //a current cookie, and modify that
 //TODO make a sm.handleSignoutCookie function, that verifies the cookie by calling 
@@ -141,7 +156,10 @@ func (h *handler) handleSignout(w http.ResponseWriter, r *http.Request) {
 	h.sendExhibit(w, r, 0, 0)
 }
 
-//dirty but works
+//dirty but works. verifies the signins using am, then if its valid, starts a new session,
+//creates a new cookie, and manually sends back the home page. I want to try and find a 
+//way to send back the page they were previously on. Maybe store that url with javascript
+//right when they hit the "signin" link, idk
 //TODO needs to redirect with home page AND signed in (so cant just call sendExhibit)
 //so that the url changes and they dont try and refresh
 func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
@@ -164,7 +182,9 @@ func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
 		w.Write(files.fd["failedSignIn.html"].data)	
 	}
 }
-
+//these requests are not manually made by the browser, but are linked in the html files
+//error checking anyways cause technically they could still manually request for files 
+//that arent there. send back nothing if they ask for random shit
 //some sites use seperate servers for js and css
 func (h *handler) handleJsAndCss(w http.ResponseWriter, f string, ctype string){	
 	w.Header().Add("Content-Type", ctype)
@@ -176,7 +196,9 @@ func (h *handler) handleJsAndCss(w http.ResponseWriter, f string, ctype string){
 	}
 }
 
-//reddit has a seperate server just for pics
+//same basic comments as handleJsAndCss, except this one has to make a file read every
+//time. Would be stupid to try and keep a million pictures cached. Maybe sometime, keep
+//just the top posts pictures cached. who knows
 func (h *handler) handlePic(w http.ResponseWriter, path string){
 	picData, err := ioutil.ReadFile(path)
 	if err == nil {
@@ -186,9 +208,9 @@ func (h *handler) handlePic(w http.ResponseWriter, path string){
 	}
 }
 
-//all if blocks are error checks
-//seems alright
-//this error checking works fine but it fucks with the java script
+//all if statments are just error checking. Basically just taking the pathParts passed
+//to it, making sure they are valid, and passing that to h.sendExhibit
+//browser requests are made like this: /exhibit/literature/2
 //TODO do a redirect, so as to send back a full url for the navbar javascript
 func(h *handler)handleExhibit(w http.ResponseWriter, r *http.Request, pathParts []string) {
 	length := len(pathParts)
@@ -214,19 +236,21 @@ func(h *handler)handleExhibit(w http.ResponseWriter, r *http.Request, pathParts 
 	}
 	h.sendExhibit(w, r, exhibitNum, pageNum)
 }	
-/********************************************
-TODO 
-for now im doing these if else but they might be unecessary. See if i can use javascript
-to tell if a cookie is on browser or not, then dynamically change the top right to either
-say "sign up sign in" or "sabio667 sign out" or something
-and YEAH javascript can handle cookie shit https://www.w3schools.com/js/js_cookies.asp
--------------------------------------------------------------------------------------
-(below sounds expensive on request times. if it ever gets a lot of traffic then yeah)
-...unless i impliment that cool side panel of "things that might interest you"
-which i fucking should
-unless unless i request that info with javascript too
-*******************************************/
-//no error check needed
+
+//this comment is random af
+//TODO 
+//for now im doing these if else but they might be unecessary. See if i can use javascript
+//to tell if a cookie is on browser or not then dynamically change the top right to either
+//say "sign up sign in" or "sabio667 sign out" or something. maybe if signout sets the 
+//value "" then it can just make sure the cookie isnt blank
+//and YEAH javascript can handle cookie shit https://www.w3schools.com/js/js_cookies.asp
+//-------------------------------------------------------------------------------------
+//(below sounds expensive on request times. if it ever gets a lot of traffic then yeah)
+//...unless i impliment that cool side panel of "things that might interest you"
+//which i fucking should
+//unless unless i request that info with javascript too
+
+//sends 404 page
 func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 	cookie, err := r.Cookie("session")
 	
@@ -242,13 +266,15 @@ func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 //when creating cookies you give them names, so that you can give multiple ones.
 //by saying cookie, err := r.Cookie("session"), im asking for the cookie named
 //session. Returns an error if its not there
+//if theres an error or the session is invalid, send back TopSignedOut, else
+//send signedIntTop. then send the rest
 func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, page int){
 	cookie, err := r.Cookie("session")
 
 	if err != nil || !sm.VerifySessionCookie(cookie) {
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
 	} else {
-		log.Println("------------------sent topSignedIn.hmtl")
+		w.Write(files.fd["exhibitTopSignedOut.html"].data)
 	}
 
 	w.Write(pageContent.exhibits[exh][page])
@@ -257,26 +283,26 @@ func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, pag
 
 func main() {
 	
-
+	//initialize the globals
 	//TODO make these return errors and handle the log.Fatals out here
 	osa.initialize()
 	files.initialize()
-	pageContent.initialize()//need to go through and use osa in this
+	pageContent.initialize()
 	am.initialize()
 	sm.initialize()
 	
+	//run the background processes
 	//go sm.SessionSweep()
-	go pageContent.updateForever()//same ^^
-
+	go pageContent.updateForever()
+	
+	//start the server
 	http.Handle("/", new(handler))
-	log.Println("Starting listening....")
-	err := http.ListenAndServe(":8080", nil)
-
-	if err != nil{
-		log.Fatal("(main)ListenAndServe error:", err)
-	}
+	log.Println("listening....")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
+//gets index from AllExhibits global (i think its in content.go) and returns it. used
+//in h.handleExhibit
 func getIndex(exhibit string) (int, error){
 
 	for i, val := range AllExhibits{

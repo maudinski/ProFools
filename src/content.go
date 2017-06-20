@@ -1,10 +1,3 @@
-// TODO a fuckton of hardcoded 10's all around this program. Use slices 
-// 'ts about it
-//bouta change this bad boy the FUCK up, after writing some go scripts to
-// fill a fuckton of data in mysql. Snag some user name csv files from the internet,
-// use a random number generator, prolly find some way to make a bunch of titles
-// that are only 20 chars long, then loop loop loop my nigga. shits about to get real
-
 package main
 
 import(
@@ -17,11 +10,9 @@ import(
 	"strconv"
 )
 
-/******************************
- will hold entries in the post_db, or a row, or postData, or however tf
-i want to think about it. Point is its all the data from a post, which is
-an entry in the db. idk
-*******************************/
+//will hold entries in the post_db, or a row, or postData, or however tf
+//i want to think about it. Point is its all the data from a post, which is
+//an entry in the db. idk
 type postEntry struct {
 	userID int
 	ups int
@@ -33,19 +24,20 @@ type postEntry struct {
 	screenname string
 }
 
+//implimenting the Stringer interface. So you can naked pass to Println
 func (e postEntry) String() string {
 	return fmt.Sprintf("userID: %v -- ups: %v -- doubleups: %v -- date: %v -- time: %v -- title: %v -- pagename: %v -- screenname: %v",
 						e.userID, e.ups, e.doubleups, e.date, e.time, e.title, e.pagename, e.screenname)
 }
 
-/**************************************************************
-this type will eventually store top 100 (or 200 or whatever) posts for ALL
-subs/stages/whatever the fuck im gonna call it. Right now, only storing for the mix.
-The idea is that the main.go will create a content object Called PageContent, that will
-be tossed around the program. These functions are method for use by this object. main 
-function
-will call PageContent.initialize() or something then call go PageContent.runForever()
-***************************************************************/
+//c gloabl will be created in main.go. Tossed around the main.go. holds the content. the 
+//db is only used in here. 
+//postHtml string is a string that holds the html of a single post. %v's are already typed
+//in there, so its easy to use fmt.Sprintf to add values to it. 
+//exhibits is a slice of pages, and pages is a slice of []byte that stores the content.
+//useage: content.exhibits[num1][num2]
+//num1 corresponds to global slice AllExhibits, and num2 will be the page, so:
+//content.exhibits[1][0] is the literature exhibit, and the first page(indexing starts 0)
 type content struct {
 	db *sql.DB
 	postHtml string
@@ -64,6 +56,7 @@ var AllExhibits []string = []string{
 	"tatoos",
 	"skill_toys",
 	"wall_art",//if you add/remove, you gotta change the constant EXHIBIT_AMT
+	//this is used as is in getIndex() from main.go
 }
 
 const(
@@ -72,9 +65,8 @@ const(
 	POSTS_PER_PAGE int = 15
 )
 
-/*************************************************
-"root:test@/test_db1"
-*************************************************/
+//"root:test@/test_db1"
+//initializes the database and the postHtml string, then calls update on the content
 func (c *content) initialize(){
 
 	var err error
@@ -92,16 +84,17 @@ func (c *content) initialize(){
 	c.update(false)
 
 }
-/*************************************************
-*************************************************/
+//loops through the AllExhibits slice and updates the contents in c. uses other functions
+//to do that. spaceOut is pass as false only when c.initialize() calls this, so that it
+//initializes everything at once. Other wise, c.updataForever is called as a go routine
+//in main.go, which passes true to this function, so that it waits five seconds inbetween
+//updating each exhibits. The idea is that waiting 5 seconds will reduce some strain on
+//the server
 func (c *content) update(spacedOut bool) {
-
-	
 	for i, exhibit := range AllExhibits {
 		entries, err := c.getTopPosts(exhibit)
-		//idk what to do with this error right now, maybe fucking email me?
-		if err != nil {
-			log.Println("(content.update) GETTOPPOSTS ERROR:", err)
+		if err != nil { //idk what to do with this error right now, maybe fucking email me?
+			log.Println("(content.update) GETTOPPOSTS ERROR:", err, "-------------------")
 		}
 		c.createContent(i, entries)
 		if spacedOut{
@@ -109,43 +102,18 @@ func (c *content) update(spacedOut bool) {
 		}
 	}
 }
-/*
-	entries, err := c.getTop10Posts()
-	if err != nil {
-		return err
-	}
-	c.createContent(entries)
-	return nil
-*/
 
-
-/*****************************************************************
-purpose: inifinite loop of updating the content pages
-
-details: run like this: go c.updateForever(). just calls c.update over and over
-		and sleeps for a minute inbetween. eventually needs to call all subs seperately,
-		sleeping like 5 seconds inbetween or something. 
-*******************************************************************/
+//called as 'go c.updateForever()' in main.go. updates the contents in an infinite loop,
+//and passes true for spacedOut, which waits 5 seconds in between each exhibit update
 func (c *content) updateForever(){
 	for {
 		c.update(true)
 	}
 }
-//beautiful. I'm loving life. But I hate that I think everything through so much.
-//just fucking BE Mauricio, just fucking be
-/**********************************************************************
-purpose: to get the top 10 posts based on upvotes from the db passed to it,
-		and return them
 
-notes: theres a lot of hardcoded 10's in this function, change them all if changing. 
-		entries being returned even if error is returned for compiler reasons
-
-details: sets up a query and an array to hold the entries that will be returned, 
-		then calls db.Query of that query. loops through the rows object that 
-		db.Query returns. Scans the elements in that row into the address of each of
-		entry's fields, then stores it in the array. returns the array
-***********************************************************************/
-// update to slices and/or a global variable for size isntead of all these 10's
+//gets the top posts from the table passed. uses global variables STORED_PAGES and 
+//POSTS_PER_PAGE to determine how many. reads in the rows from mysql database and returns
+//an array of entries of the rows.
 func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEntry, error){	
 	
 	var size string = strconv.Itoa(STORED_PAGES*POSTS_PER_PAGE)
@@ -175,25 +143,12 @@ func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEnt
 
 }
 
-/**********************************************************
-purpose: to accept an array of entries and return an html string that will be
-		assigned to c.mix(eventually this while program needs to create all pages
-		not just mix)
-
-notes: only updates mix as of now. DONT just strictly have it update everything. Some how 
-		work out some logic that it will update each seperate sub in like 5 sec intervals.
-		maybe not in this function, but in another, and pass the mix as parameter, or make 
-		this a method for a sub object, idk
-
-details: creates and empty string and starts looping through the array of entries.
-		concatenates(spelling?) the html generated for each entry by Sprintf
-		each entry is a seperate post in the db
-
-TODO: currently makes page full of every thing in the entry array, so whenever im 
-	grabbing more data, i cant just pass in a huge ass array of it, unless i handle 
-	that in here. also, needs to eventually deal with port pics and shit (idk how yet)
-**********************************************************/
-// hard coded 10 here, update to slice or global variable for size
+//gets passed index of the exhibit that is gonna get updated, and the array of entries
+//does some modulo shit in the for loop that could be done better but isnt. 
+//also i havent fully checked this function, it seems to work alright but im not sure
+//if the site itself does the page suring properly. ie: exhibit/mix/0 works but idk about
+//exhibit/mix/1, etc
+//uses the post html string in content
 func(c *content)createContent (exhInd int, entries [STORED_PAGES*POSTS_PER_PAGE]postEntry){
 	page := ""
 	pageNum := 0
@@ -210,14 +165,8 @@ func(c *content)createContent (exhInd int, entries [STORED_PAGES*POSTS_PER_PAGE]
 	}
 }
 
-/*********************************************************************
-TODO but i also need to keep a string version of postHtml for continuous updates
-purpose: to load the html data for a post  and return a string version of that data
-
-details: Reads file in from passed in. returns a string typecast
-		of the []byte that ioutil.ReadFile returns. The post html should already have the 
-		%v's in it (typed into the html file)
-*********************************************************************/
+//reads the file passed, which is the html of the post. assumes that the %v's are already
+//typed in the correct place, because breatContent use fmt.Sprintf to add the values to it
 func loadPostHtml(file string) (string, error) {
 	data, err := ioutil.ReadFile(file)	
 	if err != nil {
@@ -225,3 +174,4 @@ func loadPostHtml(file string) (string, error) {
 	}
 	return string(data), nil
 }
+
