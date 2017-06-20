@@ -104,11 +104,12 @@ func (sm *SessionManager) initialize(){
 	sm.lowestPlacement = -1
 	sm.farthestPlacementYet = 0
 	sm.lastDeleted = -1
-	sm.inactiveAllowance = time.Now() //BUG BUG BUG setting this for compiler, since im
-	//not using it yet. not even sure if this is going to be a time.Time object,
-	//needs to be the maximum time that a session can go unused. Used by sessionSweep
+	sm.inactiveAllowance = time.Now() //BUG BUG BUG setting this for compiler
 }
 
+//recieves the id and the handle that were stored in the users cookie and returns
+//if they are currently in a session
+//
 //check for not only if the sessions is active, but also if the handle is the same one.
 //session spot may be active because some other user took that session spot
 func (sm *SessionManager)VerifySession(id int, handle string) bool {
@@ -116,9 +117,13 @@ func (sm *SessionManager)VerifySession(id int, handle string) bool {
 	if s.active && s.handle == handle{
 		return true	
 	}
+	log.Println("---------------verify sess", id, handle, false)
 	return false
 }
 
+//takes the cookie as a parameter, call ParseCookie on it, then calls VErifySEssion on it
+//made a seperate function so that handler in main call either this or VerifySession, 
+//depending on wether it already called parseCookie
 func (sm *SessionManager) VerifySessionCookie(c *http.Cookie) bool {
 	id, handle, err := sm.ParseCookie(c)
 	if err != nil{
@@ -130,6 +135,9 @@ func (sm *SessionManager) VerifySessionCookie(c *http.Cookie) bool {
 
 
 //retuns the session id. the cookie is made with this id in h.handleLogin
+//calls sm.nextRawId() to get the index, sets all its values in the sessions
+//slice, then returns the un-raw or cooked (ha) id, which is just the index
+//+ 1000000
 func (sm *SessionManager) StartSession(handle string) int{
 	rid := sm.nextRawId()
 	sm.sessions[rid].active = true
@@ -139,25 +147,30 @@ func (sm *SessionManager) StartSession(handle string) int{
 	return rid+1000000
 }
 
-
+//sets the sessions at id-1000000(which is the index/rawid) false
+//also sets the nextBlankSpot to -1, which is pre-emptive for sm.SessionSweep
 func (sm *SessionManager) EndSession(id int){
 	index := id-1000000
 	sm.sessions[index].active = false
 	sm.sessions[index].nextBlankSpot = -1
 }
 
-/****************/
 //this function will return the ID and also update the chains 
 //the calling function (StartSession) will set the rest of the values in the session
 //RawID means staight index. Unraw would then mean with the 1000000 added
-//BUG BUG BUG kinda pseudo coded, check the logic
+//
+//lowestPlacement is only -1 if there are no free spots under the farthestPlacemnetYet,
+//so, first thing this does is check for it to be -1, then sets it accordingly to either
+//frathestPlacemnetYet or lowestPlaceMent. updates whichever is set
+//
+//if setting to farthestPlacementYet, check if the sessions slice needs to be resized
 func (sm *SessionManager) nextRawId() int{
 	index := 0
-	if sm.lowestPlacement == -1 {// keep this consistent, nextBlankSpot -1 if the next is
-		index = sm.farthestPlacementYet   // the fathestYet
+	if sm.lowestPlacement == -1 {
+		index = sm.farthestPlacementYet
 		sm.farthestPlacementYet++
-		sm.resizeCheck()//if we're moving the farthestPllacementYet, then may have to
-	} else {												//resize
+		sm.resizeCheck()
+	} else {											
 		index = sm.lowestPlacement  
 		sm.lowestPlacement = sm.sessions[index].nextBlankSpot// this assumes the chaining
 	}									//is done correctly, and the last open spot
@@ -165,11 +178,19 @@ func (sm *SessionManager) nextRawId() int{
 }										//(the nextBlankSpot is -1)
 
 
+
+//first checks if the sm is already being resized (meaning this was called and passed
+// and called sm.resize()). then if its not, check if 75 percent of the slice is full, 
+//and resize if it is.
+//
+//TODO should find a more efficient way than converting both to floats (which is needed by
+//go to do the arithmetic), although maybe its not that inefficient
 func (sm *SessionManager) resizeCheck(){	
 	if sm.beingResized{
 		return	
 	}
 	if .75*float64(sm.currentSize)<= float64(sm.farthestPlacementYet){
+		sm.beingResized = true
 		go sm.resize()	
 	}
 }
@@ -194,14 +215,17 @@ func (sm *SessionManager) SessionSweep(){
 	
 }
 
-//not perfect error checking, if someone fucks with the cookie and sends
+//TODO not perfect error checking, if someone fucks with the cookie and sends
 //some messed up stuff back this wont work
+//
+//parses the cookie, which is set like so: "193736594|jockster", id|handle
 func (sm *SessionManager) ParseCookie(c *http.Cookie) (int, string, error){
 	parts := strings.Split(c.Value, "|")
 	id, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return 0, "", err	
-	}		
+	}
+	log.Println("-------------------------parsecookie, ", id, parts[1])		
 	return id, parts[1], nil
 }
 

@@ -101,6 +101,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 			h.handleJsAndCss(w, pathParts[1], "application/js")
 		case "signin":
 			w.Write(files.fd["signin.html"].data)
+		case "signout":
+			h.handleSignout(w, r)
 		default:
 			h.sendExhibit(w, r, 0, 0)
 			log.Println("(servehttp) hit the deafult:", r.URL.Path)
@@ -111,7 +113,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts []string){
 	
 	switch  pathParts[0]{
-		case "verifysignin":
+		case "verify-signin":
 			h.handleSignin(w, r)
 		case "logout":
 			h.handleSignout(w, r)
@@ -122,9 +124,26 @@ func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts [
 			h.sendExhibit(w, r, 0, 0)
 	}
 }
+//TODO delete cookie, or set the value to "". then handle sign in will first check for
+//a current cookie, and modify that
+//TODO make a sm.handleSignoutCookie function, that verifies the cookie by calling 
+//verifysessioncookie (maybe)
+//TODO needs to redirect to homepage, so that the url changes and they dont accientally
+//try and refresh the signout
+func (h *handler) handleSignout(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("session")
+	if err == nil {
+		id, _, err := sm.ParseCookie(c)
+		if err == nil {
+			sm.EndSession(id)
+		}
+	}	
+	h.sendExhibit(w, r, 0, 0)
+}
 
-//maybe just send back a cookie and the homepage/currentpage, then js will alter the rest
-//this is pseudo coded as fuck
+//dirty but works
+//TODO needs to redirect with home page AND signed in (so cant just call sendExhibit)
+//so that the url changes and they dont try and refresh
 func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
 	handle := r.Form.Get("handle")
@@ -145,19 +164,6 @@ func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
 		w.Write(files.fd["failedSignIn.html"].data)	
 	}
 }
-
-func (h *handler)  handleSignout(w http.ResponseWriter, r *http.Request){
-		
-}
-
-/************************************************
-TODO do this for sure man, shouldnt be too hard
-i think the blank still technically gets all the data copied over, 
-so larg-ish amounts of data are getting stored then trashed for this.
-maybe chane files.fd to hold *fileData instead of actual file data. Not 
-sure how that would work, but if it did, then this would only copy over 
-an 8 byte pointer. Better than the entire []byte
-***********************************************/
 
 //some sites use seperate servers for js and css
 func (h *handler) handleJsAndCss(w http.ResponseWriter, f string, ctype string){	
@@ -242,11 +248,11 @@ func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, pag
 	if err != nil || !sm.VerifySessionCookie(cookie) {
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
 	} else {
-		w.Write(files.fd["exhibitTopSignedIn.html"].data)
+		log.Println("------------------sent topSignedIn.hmtl")
 	}
 
 	w.Write(pageContent.exhibits[exh][page])
-	w.Write(files.fd["exhibitTop.html"].data)
+	w.Write(files.fd["exhibitBottom.html"].data)
 }
 
 func main() {

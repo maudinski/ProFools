@@ -33,7 +33,7 @@ func (am *AccountManager) initialize(){
 		log.Fatal("(accountmanage.initialize) db didnt open:", err)	
 	}
 								//incase i forget, db.Prepare uses ? as placeholder
-	am.verifyQuery = "select * from "+osa.users_table+" where handle=?"
+	am.verifyQuery = "select * from "+osa.users_table+" where handle = "
 
 }
 
@@ -43,25 +43,19 @@ func (am *AccountManager) initialize(){
 //sometimes duplicate code runs more efficiently than non duplicate code. also lazy
 func (am *AccountManager) VerifySignin(handle string, pass string) bool {
 
-	stmt, err := am.db.Prepare(am.verifyQuery)
-	if err != nil {
-		log.Println("(accountmanager.VERIFYLOGIN DB.PREPARE ERR:", err) // for debug
-		return false
-	}
 	var e userEntry
-	row, err2 := stmt.Query(pass)	
-	if err2 != nil {
-		log.Println("(accountmanager.VERIFYLOGIN STMT.QUERY ERR:", err) // for debug
-		return false
-	}
-	
-	err3 := row.Scan(&e.handle, &e.password, &e.screenname, &e.email, &e.portpicDir)
-	if err3 != nil {
-		log.Println("(accountmanager.VERIFYLOGIN row.Scan returned err", err)
+	fullQuery := am.verifyQuery + "'" + handle + "'" +";"
+	err := am.db.QueryRow(fullQuery).Scan(&e.handle, &e.password, &e.screenname, &e.email, &e.portpicDir)
+	if err == sql.ErrNoRows{
+		log.Println("am.VerifySignin", err)
 		return false	
 	}
-
+	if err != nil {
+		log.Println("am.VerifySignin", err)
+		return false	
+	}
 	return e.password == pass
+
 }
 
 
