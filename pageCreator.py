@@ -15,6 +15,7 @@
 # the browser will call for those (preloaded)files, and that method searches the cached files
 # misleading cause urls are patterned like directories, but thats not whats gonna happen here
 
+
 pages = {
 		
 	"exhibitTopSignedIn.html": [["htmlfiles/signedInHeader.html", "htmlfiles/navbar.html", "htmlfiles/sortbar.html"], ["js/exhibit.js", "css/exhibit.css"]], # note 1
