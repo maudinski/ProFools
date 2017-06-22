@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><title>ProFools</title><link rel="stylesheet" type="text/css" href="//localhost:8080/css/signup.css"></head><body><div id="header_div">
+<!DOCTYPE html><html><head><title>ProFools</title><link rel="stylesheet" type="text/css" href="//localhost:8080/css/signup.css"><script src="//localhost:8080/js/signup.js"></script></head><body><div id="header_div">
     <div class="a_header_div" id="logo_div">
         <h3>ProFools</h3>
     </div>
@@ -14,30 +14,29 @@
         <a href="//localhost:8080/signup" id="sign_up_link">sign up</a>
     </div>
 </div>
-<div>
-	<form action="//localhost:8080/signup" method="POST">
+<center>
+<div id="form_div">
+	<form  onsubmit="return checkForm()" method="POST">
 		
 		<label>Handle. This will be what you log in with and has to be unique</label>
-		<br></br>
-		<input type="text" name="handle" value="" maxLength="20"/>
+		<input class="field" type="text" name="handle" value="" maxLength="20" required/>
 		<br></br>
 
 		<label>Email</label>
-		<br></br>
-		<input type="text" name="email" value="" maxLength="40"/>
+		<input class="field" type="text" name="email" value="" maxLength="40" required/>
 		<br></br>
 
 		<label>Password</label>
-		<br></br>
-		<input type="text" name="password" value="" maxLength="30"/>
-		<br></br>
-
-		<label>Password again</label>
-		<br></br>
-		<input type="text" name="password2" value="" maxLength="30"/>
+		<input class="field" type="text" name="password" value="" maxLength="30" required/>
 		<br></br>
 
+		<!--<label>Password again</label>
+		<input class="field" type="text" name="password2" value=""maxLength="30" required/>
+		<br></br>-->
+		
+		<label id="warning"></label>
 		<input type="submit" value="sign up"/>
 	</form>
 </div>
+</center>
 </body></html>

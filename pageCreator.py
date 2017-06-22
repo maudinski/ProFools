@@ -35,12 +35,14 @@ pages = {
 
 	"failedSignIn.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/failedSignIn.html"],["css/signin.css"]],
 
-	"signup.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/signup.html"],["css/signup.css"]],
+	"signup.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/signup.html"],["css/signup.css", "js/signup.js"]],
 	"signup.css":[["cssfiles/header.css", "cssfiles/signup.css"],[]],
+	"signup.js":[["jsfiles/header.js"],[]],
 
 	"signupFailed.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/signupFailed.html"],
 	 		["css/signupFailed.css",]],
 	"signupFailed.css": [["cssfiles/header.css"],[]]
+	
 
 }
 

@@ -68,4 +68,11 @@ this will also need to be fucked with for if user is sign in, idk how tho*/
 }
 label {
 	color: white;	
+	display: block;
+}
+#form_div {
+	padding-top: 30px;
+}
+#warning {
+	color: #d81515;
 }

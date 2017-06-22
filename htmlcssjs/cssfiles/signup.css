@@ -1,3 +1,10 @@
 label {
 	color: white;	
+	display: block;
+}
+#form_div {
+	padding-top: 30px;
+}
+#warning {
+	color: #d81515;
 }
