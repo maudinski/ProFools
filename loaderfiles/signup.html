@@ -1,0 +1,43 @@
+<!DOCTYPE html><html><head><title>ProFools</title><link rel="stylesheet" type="text/css" href="//localhost:8080/css/signup.css"></head><body><div id="header_div">
+    <div class="a_header_div" id="logo_div">
+        <h3>ProFools</h3>
+    </div>
+    <div class="a_header_div" id="phrase_div">
+        <label id="phrase_id">showcase and share; a creative outlet</label>
+    </div>
+    <div class="a_header_div" id="search_div">
+        <input type="text" name="search_request" id="search_bar" size="30"/>
+        <input type="submit" name="search_button" id="search_button" value="search"/>
+    </div>
+    <div class="a_header_div" id="sign_links_div">
+		<a href="//localhost:8080/signin" id="sign_in_link">sign in</a>
+        <a href="//localhost:8080/signup" id="sign_up_link">sign up</a>
+    </div>
+</div>
+<div>
+	<form action="//localhost:8080/signup" method="POST">
+		
+		<label>Handle. This will be what you log in with and has to be unique</label>
+		<br></br>
+		<input type="text" name="handle" value="" maxLength="20"/>
+		<br></br>
+
+		<label>Email</label>
+		<br></br>
+		<input type="text" name="email" value="" maxLength="40"/>
+		<br></br>
+
+		<label>Password</label>
+		<br></br>
+		<input type="text" name="password" value="" maxLength="30"/>
+		<br></br>
+
+		<label>Password again</label>
+		<br></br>
+		<input type="text" name="password2" value="" maxLength="30"/>
+		<br></br>
+
+		<input type="submit" value="sign up"/>
+	</form>
+</div>
+</body></html>

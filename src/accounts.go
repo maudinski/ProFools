@@ -4,6 +4,7 @@ import (
 	_"github.com/go-sql-driver/mysql"
 	"database/sql"
 	"log"
+	"fmt"
 )
 
 
@@ -14,7 +15,8 @@ type AccountManager struct {
 	db *sql.DB
 	//will hold the query for looking things up by handle
 	//initialized to be a partial query string in initialize(). just append the handle
-	verifyQuery string
+	verifySigninQuery string //also used to check for exisiting acc's with signups
+	signupQuery string
 }
 
 //struct to hold what the queries return
@@ -34,8 +36,9 @@ func (am *AccountManager) initialize(){
 	if err != nil {
 		log.Fatal("(accountmanage.initialize) db didnt open:", err)	
 	}
-	am.verifyQuery = "select * from "+osa.users_table+" where handle = "
-
+	am.verifySigninQuery = "select * from "+osa.users_table+" where handle = "
+	am.signupQuery ="insert into "+osa.users_table+"(handle, password, screenname, email, portpicDest)"+
+				" values(%v, %v, %v, %v, %v);"
 }
 
 //you can only log in if you know your handle name, so that must be passed
@@ -44,7 +47,7 @@ func (am *AccountManager) initialize(){
 func (am *AccountManager) VerifySignin(handle string, pass string) bool {
 
 	var e userEntry
-	fullQuery := am.verifyQuery + "'" + handle + "'" +";"
+	fullQuery := am.verifySigninQuery + "'" + handle + "'" +";"
 	err := am.db.QueryRow(fullQuery).Scan(&e.handle, &e.password, &e.screenname, &e.email, &e.portpicDir)
 	if err == sql.ErrNoRows{
 		log.Println("am.VerifySignin", err)
@@ -57,6 +60,33 @@ func (am *AccountManager) VerifySignin(handle string, pass string) bool {
 	return e.password == pass
 
 }
+
+//TODO error check the lengths of shit, incase fuckers get clever
+//handle
+//password
+//screenname
+//email
+func (am *AccountManager) Signup(h string, p string, s string, e string) error{	
+	fullQuery := fmt.Sprintf(am.signupQuery, "'"+h+"'", "'"+p+"'","'"+s+"'", "'"+e+"'",
+								"'"+osa.defaultPortPic+"'")
+	_, err := am.db.Exec(fullQuery)//i think this works
+	if err != nil{
+		return err	
+	}
+	return nil
+}
+
+//basically just returns true if it has any parenthesis or semicolons, shit like that
+//make this a seperate package
+func (am *AccountManager) isSqlInjection (str string){
+}
+
+
+
+
+
+
+
 
 
 

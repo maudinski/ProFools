@@ -14,7 +14,7 @@
 # css or js, but because thats how the serveHTTP in main.go rationalizes what its looking for
 # the browser will call for those (preloaded)files, and that method searches the cached files
 # misleading cause urls are patterned like directories, but thats not whats gonna happen here
-
+#this system is really bad
 
 pages = {
 		
@@ -34,6 +34,13 @@ pages = {
 	"signin.css":[["cssfiles/header.css"],[]],
 
 	"failedSignIn.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/failedSignIn.html"],["css/signin.css"]],
+
+	"signup.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/signup.html"],["css/signup.css"]],
+	"signup.css":[["cssfiles/header.css", "cssfiles/signup.css"],[]],
+
+	"signupFailed.html":[["htmlfiles/signedOutHeader.html", "htmlfiles/signupFailed.html"],
+	 		["css/signupFailed.css",]],
+	"signupFailed.css": [["cssfiles/header.css"],[]]
 
 }
 

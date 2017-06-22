@@ -48,7 +48,8 @@ type outsideStructureAbstractor struct{
 
 	users_db string //for users and passwords
 	users_table string
-
+	
+	defaultPortPic string
 }
 
 //initializes the osa
@@ -62,6 +63,7 @@ func (osa *outsideStructureAbstractor) initialize(){
 	osa.db = "test_db2"
 	osa.users_db = "test_users_db2"
 	osa.users_table = "users"
+	osa.defaultPortPic = "nothing"
 }
 
 //cutsom handler. Nothing in it, just necessary for http.Handle
@@ -87,7 +89,7 @@ type handler struct {
 //	["exhbibit", "mix", "7"] (thats pathParts). switch statement in here evaluates
 // 	pathParts[0]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
-	log.Println(r.URL.Path, r.Method)
+	//log.Println(r.URL.Path, r.Method)
 	if r.URL.Path == "/"{								
 		h.sendExhibit(w, r, 0, 0)
 		return;
@@ -114,6 +116,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 			w.Write(files.fd["signin.html"].data)
 		case "signout":
 			h.handleSignout(w, r)
+		case "signup":
+			h.handleSignup(w, r)
 		default:
 			h.sendExhibit(w, r, 0, 0)
 			log.Println("(servehttp) hit the deafult:", r.URL.Path)
@@ -122,7 +126,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 }
 
 //handles shit with method=="POST". evaluates pathParts, passed to it, in the switch
-//statemnet
+//statemnet.
+//there is 2 different outcomes of localhost:8080/signup, depending on wether the method
+//is POST or GET. this is the Post outcome
 func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts []string){
 	
 	switch  pathParts[0]{
@@ -132,10 +138,57 @@ func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts [
 			h.handleSignout(w, r)
 		case "postpost":
 		case "signup":
+			log.Println("signup called")
+			h.verifySignup(w, r)
 		default:
 			log.Println("Hit the default for POST")
 			h.sendExhibit(w, r, 0, 0)
 	}
+}
+
+//not to be confused with verifySingup, all this does is if they click the signup link at
+//the top of the page, it sends back the signup form. verifySignup does all the logistical
+//stuff, this function is its bitch
+func (h *handler) handleSignup(w http.ResponseWriter, r *http.Request) {
+	w.Write(files.fd["signup.html"].data)	
+}
+
+//handles signup. First checks if there is any stored cookies. If there is, end any session
+//associated with it, and set isCookie to true (used a little later). Parse the form, and
+//get the handle, password, screen name, and email, and pass them to am.Signup. If that 
+//returns an error, send signupFailed.html and return. Otherwise the signup was succesful.
+//start a new session, get a new value for cookie (should really make that a method for
+//sessiosManager or something). If there was a cookie already then reset its value, or else
+//create a new cookie and set it. Send back exhibitSignedIn.html manually
+func (h *handler) verifySignup(w http.ResponseWriter, r *http.Request){
+	cookieExists := false
+	c, err := r.Cookie("session")
+	if err == nil {
+		sm.EndSessionCookie(c)	
+		cookieExists = true
+	}	
+	r.ParseForm()
+	ha, p, e := r.Form.Get("handle"), r.Form.Get("password"), r.Form.Get("email")
+	s := ha
+	log.Println("recieved:", ha, p, s, e)
+	err = am.Signup(ha, p, s, e)
+	if err != nil {	
+		log.Println(err)
+		w.Write(files.fd["signupFailed.html"].data)
+		return
+	}
+	id := sm.StartSession(ha)
+	val := sm.newCookieValue(id, ha)
+	if cookieExists {
+		c.Value = val
+		http.SetCookie(w, c)
+	} else {
+		newC := &http.Cookie{Name: "session", Value: val}
+		http.SetCookie(w, newC)
+	}
+	w.Write(files.fd["exhibitTopSignedIn.html"].data)
+	w.Write(pageContent.exhibits[0][0])
+	w.Write(files.fd["exhibitBottom.html"].data)
 }
 
 //this works for now. Just ends the session, then sends back the home page.
@@ -148,11 +201,9 @@ func (h *handler) handlePOST(w http.ResponseWriter, r *http.Request, pathParts [
 func (h *handler) handleSignout(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie("session")
 	if err == nil {
-		id, _, err := sm.ParseCookie(c)
-		if err == nil {
-			sm.EndSession(id)
-		}
-	}	
+		sm.EndSessionCookie(c)
+		c.Value = ""	
+	}
 	h.sendExhibit(w, r, 0, 0)
 }
 
@@ -169,7 +220,7 @@ func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
 	valid := am.VerifySignin(handle, password)
 	if valid {
 		id := sm.StartSession(handle)
-		val := strconv.Itoa(id)+"|"+handle
+		val := sm.newCookieValue(id, handle)
 		c := &http.Cookie{Name: "session", Value: val}
 		http.SetCookie(w, c)
 		//cookie is stored in request, so sending a page now will still send
@@ -270,11 +321,10 @@ func (h *handler) send404(w http.ResponseWriter, r *http.Request){
 //send signedIntTop. then send the rest
 func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, page int){
 	cookie, err := r.Cookie("session")
-
 	if err != nil || !sm.VerifySessionCookie(cookie) {
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
 	} else {
-		w.Write(files.fd["exhibitTopSignedOut.html"].data)
+		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	}
 
 	w.Write(pageContent.exhibits[exh][page])

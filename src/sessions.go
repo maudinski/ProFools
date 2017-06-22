@@ -149,10 +149,20 @@ func (sm *SessionManager) StartSession(handle string) int{
 
 //sets the sessions at id-1000000(which is the index/rawid) false
 //also sets the nextBlankSpot to -1, which is pre-emptive for sm.SessionSweep
-func (sm *SessionManager) EndSession(id int){
+func (sm *SessionManager) EndSession(id int, handle string){
 	index := id-1000000
+	if sm.sessions[index].handle != handle{
+		return	
+	}
 	sm.sessions[index].active = false
 	sm.sessions[index].nextBlankSpot = -1
+}
+//parses the cookie and call sm.EndSession()
+func (sm *SessionManager) EndSessionCookie(c *http.Cookie) {
+	id, handle, err := sm.ParseCookie(c)
+	if err == nil {
+		sm.EndSession(id, handle)	
+	}
 }
 
 //this function will return the ID and also update the chains 
@@ -229,7 +239,12 @@ func (sm *SessionManager) ParseCookie(c *http.Cookie) (int, string, error){
 	return id, parts[1], nil
 }
 
-
+//function assumes no incorrect input i guess, since the id should 100% only be gotten 
+//from sm.StartSession. used for creating the sessions id string
+//that will be stored in the Cookies value, in form of "id|handle"
+func (sm *SessionManager) newCookieValue(id int, handle string) string {
+	return strconv.Itoa(id)+"|"+handle
+}
 
 
 
