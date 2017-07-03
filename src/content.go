@@ -84,6 +84,8 @@ func (c *content) initialize(){
 	c.update(false)
 
 }
+//TODO need to somehow lock shit with mutex's when changing data, so that shit doesnt go
+//wrong.
 //loops through the AllExhibits slice and updates the contents in c. uses other functions
 //to do that. spaceOut is pass as false only when c.initialize() calls this, so that it
 //initializes everything at once. Other wise, c.updataForever is called as a go routine

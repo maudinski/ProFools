@@ -14,7 +14,7 @@ for t in todos:
 # arguments and their commands
 commands = { # add any more go files in this, call() takes command/util and aray of args
 	"go": ["go", "build", "src/main.go", "src/init.go", "src/content.go",
-			"src/accounts.go", "src/sessions.go"],
+			"src/accounts.go"], 
 	"html": ["python", "pageCreator.py"]
 }
 

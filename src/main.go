@@ -22,13 +22,14 @@ import (
 	"io/ioutil"
 	"strconv"
 	"errors"
+	"github.com/maudinski/sesh"
 )
 //all the globals used around the program. All are only used in this file for now,
 //except osa
 var files Files
-var pageContent content
+var pc content
 var osa outsideStructureAbstractor
-var sm SessionManager
+var sm *sesh.SessionManager
 var am AccountManager
 
 //meant so if i change a password, or a directory structure, or my table/database
@@ -153,6 +154,7 @@ func (h *handler) handleSignup(w http.ResponseWriter, r *http.Request) {
 	w.Write(files.fd["signup.html"].data)	
 }
 
+//TODO change comments, not like david is gonna do anything tho
 //handles signup. First checks if there is any stored cookies. If there is, end any session
 //associated with it, and set isCookie to true (used a little later). Parse the form, and
 //get the handle, password, screen name, and email, and pass them to am.Signup. If that 
@@ -161,49 +163,26 @@ func (h *handler) handleSignup(w http.ResponseWriter, r *http.Request) {
 //sessiosManager or something). If there was a cookie already then reset its value, or else
 //create a new cookie and set it. Send back exhibitSignedIn.html manually
 func (h *handler) verifySignup(w http.ResponseWriter, r *http.Request){
-	cookieExists := false
-	c, err := r.Cookie("session")
-	if err == nil {
-		sm.EndSessionCookie(c)	
-		cookieExists = true
-	}	
 	r.ParseForm()
 	ha, p, e := r.Form.Get("handle"), r.Form.Get("password"), r.Form.Get("email")
 	s := ha
-	log.Println("recieved:", ha, p, s, e)
-	err = am.Signup(ha, p, s, e)
+	err := am.Signup(ha, p, s, e)
 	if err != nil {	
 		log.Println(err)
 		w.Write(files.fd["signupFailed.html"].data)
 		return
 	}
-	id := sm.StartSession(ha)
-	val := sm.newCookieValue(id, ha)
-	if cookieExists {
-		c.Value = val
-		http.SetCookie(w, c)
-	} else {
-		newC := &http.Cookie{Name: "session", Value: val}
-		http.SetCookie(w, newC)
-	}
+	sm.StartSession(w, ha)
 	w.Write(files.fd["exhibitTopSignedIn.html"].data)
-	w.Write(pageContent.exhibits[0][0])
+	w.Write(pc.exhibits[0][0])
 	w.Write(files.fd["exhibitBottom.html"].data)
 }
 
 //this works for now. Just ends the session, then sends back the home page.
-//TODO delete cookie, or set the value to "". then handle sign in will first check for
-//a current cookie, and modify that
-//TODO make a sm.handleSignoutCookie function, that verifies the cookie by calling 
-//verifysessioncookie (maybe)
 //TODO needs to redirect to homepage, so that the url changes and they dont accientally
 //try and refresh the signout
 func (h *handler) handleSignout(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie("session")
-	if err == nil {
-		sm.EndSessionCookie(c)
-		c.Value = ""	
-	}
+	sm.EndSession(r)
 	h.sendExhibit(w, r, 0, 0)
 }
 
@@ -215,24 +194,18 @@ func (h *handler) handleSignout(w http.ResponseWriter, r *http.Request) {
 //so that the url changes and they dont try and refresh
 func (h *handler) handleSignin(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	handle := r.Form.Get("handle")
-	password := r.Form.Get("password")
+	handle, password := r.Form.Get("handle"), r.Form.Get("password")
 	valid := am.VerifySignin(handle, password)
-	if valid {
-		id := sm.StartSession(handle)
-		val := sm.newCookieValue(id, handle)
-		c := &http.Cookie{Name: "session", Value: val}
-		http.SetCookie(w, c)
-		//cookie is stored in request, so sending a page now will still send
-		//a exhibitTopSignedOut.html, since they check r.Cookie. so its dirty
-		//but just manually send the pages
-		w.Write(files.fd["exhibitTopSignedIn.html"].data)
-		w.Write(pageContent.exhibits[0][0])
-		w.Write(files.fd["exhibitBottom.html"].data)
-	} else {
-		w.Write(files.fd["failedSignIn.html"].data)	
+	if !valid {
+		w.Write(files.fd["failedSignIn.html"].data)
+		return
 	}
+	sm.StartSession(w, handle)
+	w.Write(files.fd["exhibitTopSignedIn.html"].data)
+	w.Write(pc.exhibits[0][0])//TODO entire html change with javascript so this wont happen
+	w.Write(files.fd["exhibitBottom.html"].data)
 }
+
 //these requests are not manually made by the browser, but are linked in the html files
 //error checking anyways cause technically they could still manually request for files 
 //that arent there. send back nothing if they ask for random shit
@@ -289,7 +262,7 @@ func(h *handler)handleExhibit(w http.ResponseWriter, r *http.Request, pathParts 
 }	
 
 //this comment is random af
-//TODO 
+//TODO  change comments
 //for now im doing these if else but they might be unecessary. See if i can use javascript
 //to tell if a cookie is on browser or not then dynamically change the top right to either
 //say "sign up sign in" or "sabio667 sign out" or something. maybe if signout sets the 
@@ -303,31 +276,28 @@ func(h *handler)handleExhibit(w http.ResponseWriter, r *http.Request, pathParts 
 
 //sends 404 page
 func (h *handler) send404(w http.ResponseWriter, r *http.Request){
-	cookie, err := r.Cookie("session")
-	
-	if err != nil || !sm.VerifySessionCookie(cookie){
+	if sm.VerifySession(r) != nil{
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
-	} else {
+	} else { //TODO fucking gross man, change the html/javascript already
 		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	}
-	
 	w.Write(files.fd["404.html"].data)
 }
 
+//TODO change comments
 //when creating cookies you give them names, so that you can give multiple ones.
 //by saying cookie, err := r.Cookie("session"), im asking for the cookie named
 //session. Returns an error if its not there
 //if theres an error or the session is invalid, send back TopSignedOut, else
 //send signedIntTop. then send the rest
 func(h *handler)sendExhibit(w http.ResponseWriter, r *http.Request, exh int, page int){
-	cookie, err := r.Cookie("session")
-	if err != nil || !sm.VerifySessionCookie(cookie) {
+	if sm.VerifySession(r) != nil {
 		w.Write(files.fd["exhibitTopSignedOut.html"].data)
-	} else {
+	} else {//TODO fucking disgusting, change the fucking html/javascript format god dammit
 		w.Write(files.fd["exhibitTopSignedIn.html"].data)
 	}
 
-	w.Write(pageContent.exhibits[exh][page])
+	w.Write(pc.exhibits[exh][page])
 	w.Write(files.fd["exhibitBottom.html"].data)
 }
 
@@ -337,13 +307,12 @@ func main() {
 	//TODO make these return errors and handle the log.Fatals out here
 	osa.initialize()
 	files.initialize()
-	pageContent.initialize()
+	pc.initialize()
 	am.initialize()
-	sm.initialize()
-	
+	sm = sesh.NewSM()
+
 	//run the background processes
-	//go sm.SessionSweep()
-	go pageContent.updateForever()
+	go pc.updateForever()
 	
 	//start the server
 	http.Handle("/", new(handler))
