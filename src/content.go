@@ -24,12 +24,6 @@ type postEntry struct {
 	screenname string
 }
 
-//implimenting the Stringer interface. So you can naked pass to Println
-func (e postEntry) String() string {
-	return fmt.Sprintf("userID: %v -- ups: %v -- doubleups: %v -- date: %v -- time: %v -- title: %v -- pagename: %v -- screenname: %v",
-						e.userID, e.ups, e.doubleups, e.date, e.time, e.title, e.pagename, e.screenname)
-}
-
 //c gloabl will be created in main.go. Tossed around the main.go. holds the content. the 
 //db is only used in here. 
 //postHtml string is a string that holds the html of a single post. %v's are already typed
