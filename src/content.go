@@ -42,7 +42,7 @@ type content struct {
 type pages [STORED_PAGES][]byte
 
 //THESE HAVE TO BE THE SAME AS THE TABLE NAME IN MYSQL
-//since its passed to getTopPosts as paramater. probably will use it some handle functions
+//since its p___ed to getTopPosts as paramater. probably will use it some handle functions
 //from main
 var AllExhibits []string = []string{
 	"mix",
@@ -59,37 +59,42 @@ const(
 	POSTS_PER_PAGE int = 15
 )
 
+
 //"root:test@/test_db1"
 //initializes the database and the postHtml string, then calls update on the content
-func (c *content) initialize(){
-
+func NewC(dbUserName string, dbPass string, 
+					host string, dbName string, postPath string) (*content, error) {
+	c := new(content)
 	var err error
-	sqlopenString := osa.dbUser+":"+osa.dbPass+"@"+osa.dbHostAndPort+"/"+osa.db
+	sqlopenString := dbUserName+":"+dbPass+"@"+host+"/"+dbName
+	
 	c.db, err = sql.Open("mysql", sqlopenString)	
 	if err != nil {
-		log.Fatal("(handleContent.initialize)shit isnt gonna work:", err)	
+		return c, err
 	}
-	
-	c.postHtml, err = loadPostHtml(osa.loaderFilesDir+"/"+osa.postHtmlFN)
+
+	c.postHtml, err = loadPostHtml(postPath)
 	if err != nil {
-		log.Fatal("(handleContent.intialize)loadPostHtml returned an error:", err)	
+		return c, err
 	}
 	
 	c.update(false)
+	return c, nil
 
 }
-//TODO need to somehow lock shit with mutex's when changing data, so that shit doesnt go
+//TODO need to somehow lock ___ with mutex's when changing data, so that ___ doesnt go
 //wrong.
 //loops through the AllExhibits slice and updates the contents in c. uses other functions
-//to do that. spaceOut is pass as false only when c.initialize() calls this, so that it
+//to do that. spaceOut is p___ as false only when c.initialize() calls this, so that it
 //initializes everything at once. Other wise, c.updataForever is called as a go routine
-//in main.go, which passes true to this function, so that it waits five seconds inbetween
+//in main.go, which p___es true to this function, so that it waits five seconds inbetween
 //updating each exhibits. The idea is that waiting 5 seconds will reduce some strain on
 //the server
 func (c *content) update(spacedOut bool) {
+	log.Println("in update")
 	for i, exhibit := range AllExhibits {
 		entries, err := c.getTopPosts(exhibit)
-		if err != nil { //idk what to do with this error right now, maybe fucking email me?
+		if err != nil { //idk what to do with this error right now, maybe ___ing email me?
 			log.Println("(content.update) GETTOPPOSTS ERROR:", err, "-------------------")
 		}
 		c.createContent(i, entries)
@@ -100,14 +105,16 @@ func (c *content) update(spacedOut bool) {
 }
 
 //called as 'go c.updateForever()' in main.go. updates the contents in an infinite loop,
-//and passes true for spacedOut, which waits 5 seconds in between each exhibit update
+//and p___es true for spacedOut, which waits 5 seconds in between each exhibit update
 func (c *content) updateForever(){
-	for {
-		c.update(true)
-	}
+	go func() {
+		for {
+			c.update(true)
+		}
+	}()
 }
 
-//gets the top posts from the table passed. uses global variables STORED_PAGES and 
+//gets the top posts from the table p___ed. uses global variables STORED_PAGES and 
 //POSTS_PER_PAGE to determine how many. reads in the rows from mysql database and returns
 //an array of entries of the rows.
 func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEntry, error){	
@@ -122,7 +129,7 @@ func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEnt
 		return entries, err 
 	}
 	defer rows.Close()
-
+	
 	e := new(postEntry)
 	for i := 0; rows.Next(); i++{
 		err = rows.Scan(&e.userID, &e.ups, &e.doubleups, &e.date, &e.time, 
@@ -139,8 +146,8 @@ func(c *content)getTopPosts(table string)([STORED_PAGES * POSTS_PER_PAGE]postEnt
 
 }
 
-//gets passed index of the exhibit that is gonna get updated, and the array of entries
-//does some modulo shit in the for loop that could be done better but isnt. 
+//gets p___ed index of the exhibit that is gonna get updated, and the array of entries
+//does some modulo ___ in the for loop that could be done better but isnt. 
 //also i havent fully checked this function, it seems to work alright but im not sure
 //if the site itself does the page suring properly. ie: exhibit/mix/0 works but idk about
 //exhibit/mix/1, etc
@@ -161,7 +168,7 @@ func(c *content)createContent (exhInd int, entries [STORED_PAGES*POSTS_PER_PAGE]
 	}
 }
 
-//reads the file passed, which is the html of the post. assumes that the %v's are already
+//reads the file p___ed, which is the html of the post. ___umes that the %v's are already
 //typed in the correct place, because breatContent use fmt.Sprintf to add the values to it
 func loadPostHtml(file string) (string, error) {
 	data, err := ioutil.ReadFile(file)	

@@ -30,7 +30,7 @@ type FileData struct {
 	data []byte	
 }
 
-//So that FileData impliments the Stringer interface (naked pass to fmt.Println)
+//So that FileData impliments the Stringer interface (naked p___ to fmt.Println)
 func (fd FileData) String() string{
 	return fmt.Sprintf("File name: %v -- Content Type: %v", fd.name, fd.contentType)
 }
@@ -44,7 +44,7 @@ func (filesObject *Files) initialize() {
 //goes through the directory of loaderFiles(files to be loaded/cached) and saves
 //theyre []byte data in  filesObject.fd map, with they key being the file name.
 //uses iouitl.ReadDir and ioutil.ReadFile, which makes it pretty easy. For now,
-//assumes that there wont be any directories in loader files, just all the files
+//___umes that there wont be any directories in loader files, just all the files
 //in there. Doesnt do anything if there is a directory, but shouldnt be hard to
 //change that if needed
 func (filesObject *Files) initializeFiles() {
