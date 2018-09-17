@@ -1,3 +1,5 @@
 # ProFools
 
-Dont feel like paying to make this private
+Forum for creative content sharing, for Professional Fools
+
+Backend written in Go with MySQL database
